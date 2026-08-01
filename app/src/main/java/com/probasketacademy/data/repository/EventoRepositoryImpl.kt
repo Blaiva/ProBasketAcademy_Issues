@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class EventoRepsoitoryImpl @Inject constructor(private val eventoDao: EventoDao): EventoRepository {
+class EventoRepositoryImpl @Inject constructor(private val eventoDao: EventoDao): EventoRepository {
     override fun obtenerEventosPorDia(
         inicioDia: Long,
         finDia: Long
