@@ -9,22 +9,39 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class JugadorRepositoryImpl @Inject constructor(private val jugadorDao: JugadorDao): JugadorRepository {
-    override fun obtenerJugadoresConCategoria(query: String): Flow<List<Jugador>> {
-        return  jugadorDao.obtenerJugadoresConCategoria(query).map { lista -> lista.map { it.toDomain() } }
-    }
+class JugadorRepositoryImpl @Inject constructor(
+    private val jugadorDao: JugadorDao
+) : JugadorRepository {
 
-    override suspend fun obtenerJugadorPorId(jugadorId: Long): Jugador? {
-        return jugadorDao.obtenerJugadorPorId(jugadorId)?.toDomain()
-    }
-
-    override suspend fun guardarJugador(jugador: Jugador): Long {
+    override suspend fun guardarJugador(jugador: Jugador) {
         jugadorDao.guardarJugador(jugador.toEntity())
-        return jugador.id ?: 0
     }
 
-    override suspend fun eliminarJugadorPorId(jugadorId: Long) {
+    override fun obtenerJugadorPorId(id: Long): Flow<Jugador?> {
+        return jugadorDao.obtenerJugadorConCategoriaPorId(id).map { dto ->
+            dto?.toDomain()
+        }
+    }
+
+    override fun obtenerJugadores(): Flow<List<Jugador>> {
+        return jugadorDao.obtenerJugadoresConCategoria().map { lista ->
+            lista.map { it.toDomain() }
+        }
+    }
+
+    override fun obtenerJugadoresPorCategoria(categoriaId: Long): Flow<List<Jugador>> {
+        return jugadorDao.obtenerJugadoresPorCategoria(categoriaId).map { lista ->
+            lista.map { it.toDomain() }
+        }
+    }
+
+    override fun buscarJugadores(query: String): Flow<List<Jugador>> {
+        return jugadorDao.buscarJugadoresConCategoria(query).map { lista ->
+            lista.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun eliminarJugador(jugadorId: Long) {
         jugadorDao.eliminarJugadorPorId(jugadorId)
     }
-
 }

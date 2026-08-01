@@ -7,28 +7,44 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface JugadorDao {
-    @Upsert
-    suspend fun guardarJugador(entity: JugadorEntity): Long
 
-    @Query("DELETE FROM jugadores WHERE id = :jugadorId")
-    suspend fun eliminarJugadorPorId(jugadorId: Long)
+    @Upsert
+    suspend fun guardarJugador(jugador: JugadorEntity)
 
     @Query("""
-        SELECT 
-            j.id AS id,
-            j.nombre AS nombre,
-            j.posicion AS posicion,
-            j.estaActivo AS estaActivo,
-            j.docCompleta AS docCompleta,
-            j.fotoUri AS fotoUri,
-            c.nombre AS categoriaNombre
+        SELECT j.*, c.nombre AS categoriaNombre
         FROM jugadores j
-        INNER JOIN categorias c ON j.categoriaId = c.id
-        WHERE j.nombre LIKE '%' || :query || '%' OR j.posicion LIKE '%' || :query || '%'
+        INNER JOIN categorias c ON j.categoriaId = c.Id
+        WHERE j.jugadorId = :id
+    """)
+    fun obtenerJugadorConCategoriaPorId(id: Long): Flow<JugadorConCategoriaDto?>
+
+    @Query("""
+        SELECT j.*, c.nombre AS categoriaNombre
+        FROM jugadores j
+        INNER JOIN categorias c ON j.categoriaId = c.Id
         ORDER BY j.nombre ASC
     """)
-    fun obtenerJugadoresConCategoria(query: String = ""): Flow<List<JugadorConCategoriaDto>>
+    fun obtenerJugadoresConCategoria(): Flow<List<JugadorConCategoriaDto>>
 
-    @Query("SELECT * FROM jugadores WHERE id = :jugadorId")
-    suspend fun obtenerJugadorPorId(jugadorId: Long): JugadorEntity?
+    @Query("""
+        SELECT j.*, c.nombre AS categoriaNombre
+        FROM jugadores j
+        INNER JOIN categorias c ON j.categoriaId = c.Id
+        WHERE j.categoriaId = :categoriaId
+        ORDER BY j.nombre ASC
+    """)
+    fun obtenerJugadoresPorCategoria(categoriaId: Long): Flow<List<JugadorConCategoriaDto>>
+
+    @Query("""
+        SELECT j.*, c.nombre AS categoriaNombre
+        FROM jugadores j
+        INNER JOIN categorias c ON j.categoriaId = c.Id
+        WHERE j.nombre LIKE '%' || :query || '%'
+        ORDER BY j.nombre ASC
+    """)
+    fun buscarJugadoresConCategoria(query: String): Flow<List<JugadorConCategoriaDto>>
+
+    @Query("DELETE FROM jugadores WHERE jugadorId = :jugadorId")
+    suspend fun eliminarJugadorPorId(jugadorId: Long)
 }

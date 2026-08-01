@@ -1,5 +1,4 @@
 package com.probasketacademy.data.local.jugador
-
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -11,24 +10,33 @@ import com.probasketacademy.data.local.categoria.CategoriaEntity
     foreignKeys = [
         ForeignKey(
             entity = CategoriaEntity::class,
-            parentColumns = ["id"],
+            parentColumns = ["categoriaId"],
             childColumns = ["categoriaId"],
-            onDelete = ForeignKey.Companion.CASCADE
+            onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [Index(value = ["categoriaId"])]
 )
-data class JugadorEntity (
+data class JugadorEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val categoriaId: Long,
+    val jugadorId: Long = 0,
+
     val nombre: String,
-    val numeroCamiseta: Int,
-    val posicion: String,
-    val estaActivo: Boolean,
-    val docCompleta: Boolean,
-    val estaturaM: Float,
-    val pesoKg: Float,
-    val fechaNacimiento: String,
+    val telefono: String,
+    val edad: Int,
+    val domicilio: String,
+
+    val categoriaId: Long,
+    val tallaCamiseta: String,
+    val estatura: Double,
+    val peso: Double,
+
+    val tutorNombre: String,
+    val tutorTelefono: String,
+    val tutorVinculo: String,
+    val tutorCorreo: String,
+
+    val estado: String = "Activo",
+    val docCompleta: Boolean = true,
     val fotoUri: String? = null
 )

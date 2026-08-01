@@ -1,11 +1,22 @@
 package com.probasketacademy.data.local.jugador
 
 data class JugadorConCategoriaDto(
-    val id: Long,
+    val jugadorId: Long,
     val nombre: String,
-    val posicion: String,
-    val estaActivo: Boolean,
+    val telefono: String,
+    val edad: Int,
+    val domicilio: String,
+    val categoriaId: Long,
+    val tallaCamiseta: String,
+    val estatura: Double,
+    val peso: Double,
+    val tutorNombre: String,
+    val tutorTelefono: String,
+    val tutorVinculo: String,
+    val tutorCorreo: String,
+    val estado: String,
     val docCompleta: Boolean,
     val fotoUri: String?,
+
     val categoriaNombre: String
 )
