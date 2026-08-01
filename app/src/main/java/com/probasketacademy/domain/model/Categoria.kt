@@ -1,4 +1,4 @@
-package com.probasketacademy.domain.model.categoria
+package com.probasketacademy.domain.model
 
 data class Categoria(
     val id: Long = 0,

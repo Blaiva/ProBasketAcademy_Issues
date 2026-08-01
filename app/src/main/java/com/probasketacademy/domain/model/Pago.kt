@@ -1,4 +1,4 @@
-package com.probasketacademy.domain.model.pago
+package com.probasketacademy.domain.model
 
 data class Pago (
     val id: Long = 0,

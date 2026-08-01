@@ -1,4 +1,4 @@
-package com.probasketacademy.domain.model.evento
+package com.probasketacademy.domain.model
 
 data class Evento(
     val id: Long = 0,

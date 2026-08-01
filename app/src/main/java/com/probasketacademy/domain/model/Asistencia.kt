@@ -1,4 +1,4 @@
-package com.probasketacademy.domain.model.asistencia
+package com.probasketacademy.domain.model
 
 data class Asistencia(
     val id: Long = 0,

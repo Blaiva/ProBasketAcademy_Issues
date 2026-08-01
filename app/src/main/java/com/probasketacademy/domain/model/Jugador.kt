@@ -1,4 +1,4 @@
-package com.probasketacademy.domain.model.jugador
+package com.probasketacademy.domain.model
 
 data class Jugador(
     val id: Long = 0,
