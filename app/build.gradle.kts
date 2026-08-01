@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -32,6 +33,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
@@ -77,4 +79,34 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.datetime)
+
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.navigation.compose)
+
+    ksp(libs.hilt.android.compiler)
+
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.dagger.hilt.android.testing)
+    kspTest(libs.hilt.android.compiler)
+    testImplementation(libs.androidx.room.testing)
+
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.dagger.hilt.android.testing)
+    kspAndroidTest(libs.hilt.android.compiler)
+
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
