@@ -2,8 +2,8 @@ package com.probasketacademy.di
 
 import android.content.Context
 import androidx.credentials.CredentialManager
-import com.probasketacademy.data.AuthRepository
-import com.probasketacademy.data.AuthRepositoryImpl
+import com.probasketacademy.data.repository.AuthRepository
+import com.probasketacademy.data.repository.AuthRepositoryImpl
 import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides

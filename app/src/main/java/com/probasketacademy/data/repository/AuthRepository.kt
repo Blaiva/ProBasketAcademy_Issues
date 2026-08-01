@@ -1,4 +1,4 @@
-package com.probasketacademy.data
+package com.probasketacademy.data.repository
 
 import android.content.Context
 import androidx.credentials.CredentialManager
