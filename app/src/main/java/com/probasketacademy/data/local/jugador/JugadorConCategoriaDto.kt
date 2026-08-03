@@ -8,6 +8,7 @@ data class JugadorConCategoriaDto(
     val domicilio: String,
     val categoriaId: Long,
     val tallaCamiseta: String,
+    val numeroCamiseta: Int,
     val estatura: Double,
     val peso: Double,
     val tutorNombre: String,
