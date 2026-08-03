@@ -34,6 +34,7 @@ import com.probasketacademy.presentacion.iniciodesesion.AuthScreen
 import com.probasketacademy.presentacion.home.HomeScreen
 import com.probasketacademy.presentacion.jugadores.edit.JugadorEditScreen
 import com.probasketacademy.presentacion.jugadores.list.JugadoresListScreen
+import com.probasketacademy.presentacion.categorias.list.CategoriasListScreen // Importación agregada
 import com.probasketacademy.ui.theme.IndicatorColor
 import com.probasketacademy.ui.theme.PrimaryOrange
 import com.probasketacademy.ui.theme.TextMuted
@@ -121,8 +122,34 @@ fun ApNavDisplay(
                 )
             }
 
+            // 5. Lista de Categorías
+            composable<Screen.Categorias> {
+                CategoriasListScreen(
+                    onNavigateToAsignarJugador = { categoriaId ->
+                        navController.navigate(Screen.CategoriaAsignar(categoriaId))
+                    },
+                    onNavigateToVerEditar = { categoriaId ->
+                        navController.navigate(Screen.CategoriaDetalle(categoriaId))
+                    },
+                    onAddCategoria = {
+                        // Acción para agregar categoría en el futuro
+                    }
+                )
+            }
+
+            composable<Screen.CategoriaAsignar> {
+                com.probasketacademy.presentacion.categorias.asignar.CategoriaAsignarScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable<Screen.CategoriaDetalle> {
+                com.probasketacademy.presentacion.categorias.detalle.CategoriaDetalleScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
             // --- Placeholders para las demás pantallas ---
-            composable<Screen.Categorias> { Text("Categorías Próximamente", modifier = Modifier.padding(16.dp)) }
             composable<Screen.Eventos> { Text("Calendario Próximamente", modifier = Modifier.padding(16.dp)) }
             composable<Screen.Asistencias> { Text("Asistencia Próximamente", modifier = Modifier.padding(16.dp)) }
             composable<Screen.Pagos> { Text("Finanzas Próximamente", modifier = Modifier.padding(16.dp)) }
