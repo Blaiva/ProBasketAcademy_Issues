@@ -26,16 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.domain.model.Pago
-
-// Colores basados en tu AuthScreen y tu diseño
-private val PrimaryOrange = Color(0xFFE5634D)
-private val LightBackground = Color(0xFFF8F9FA)
-private val CardBackground = Color.White
-private val TextDark = Color(0xFF1E293B)
-private val TextMuted = Color(0xFF94A3B8)
-private val GreenTrend = Color(0xFF22C55E)
-private val ChartBarLight = Color(0xFFE2C9B8)
-private val ChartBarDark = Color(0xFFB34A1B)
+import com.probasketacademy.ui.theme.* // Importamos todo de tu theme
 
 @Composable
 fun HomeScreen(
@@ -48,20 +39,15 @@ fun HomeScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(LightBackground)
+            .background(LightBackgroundHome)
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp)
     ) {
-        // Top Bar
         item { HomeHeader(onLogout) }
-
-        // Título y Botón de Acción
         item {
             Spacer(modifier = Modifier.height(24.dp))
             HomeTitleSection()
         }
-
-        // Tarjetas de Estadísticas
         item {
             Spacer(modifier = Modifier.height(24.dp))
             StatCard(
@@ -79,7 +65,7 @@ fun HomeScreen(
                 trendText = "Estable",
                 trendColor = TextMuted,
                 icon = Icons.Default.CalendarMonth,
-                iconColor = Color(0xFF4A90E2)
+                iconColor = BlueIcon
             )
             Spacer(modifier = Modifier.height(12.dp))
             StatCard(
@@ -91,14 +77,10 @@ fun HomeScreen(
                 iconColor = GreenTrend
             )
         }
-
-        // Gráfica de Finanzas
         item {
             Spacer(modifier = Modifier.height(24.dp))
             FinancialChartCard()
         }
-
-        // Lista de Pendientes por Cobrar
         item {
             Spacer(modifier = Modifier.height(24.dp))
             PendingPaymentsSection(pagos = state.cobrosPendientes)
@@ -120,7 +102,6 @@ private fun HomeHeader(onLogout: () -> Unit) {
                     .background(PrimaryOrange, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                // Placeholder para el logo del balón
                 Canvas(modifier = Modifier.size(16.dp)) {
                     drawCircle(color = Color.White)
                 }
@@ -133,12 +114,11 @@ private fun HomeHeader(onLogout: () -> Unit) {
                 color = TextDark
             )
         }
-
         IconButton(
             onClick = onLogout,
             modifier = Modifier
                 .size(36.dp)
-                .background(Color(0xFFE2E8F0), CircleShape)
+                .background(BorderColor, CircleShape)
         ) {
             Icon(
                 imageVector = Icons.Default.Person,
@@ -258,8 +238,6 @@ private fun FinancialChartCard() {
                 Icon(Icons.Default.MoreHoriz, contentDescription = null, tint = TextMuted)
             }
             Spacer(modifier = Modifier.height(24.dp))
-
-            // Simulación de Gráfica de barras
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -304,25 +282,22 @@ private fun PendingPaymentsSection(pagos: List<Pago>) {
                 )
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFFFFE4E6), RoundedCornerShape(12.dp))
+                        .background(BadgeUrgentBg, RoundedCornerShape(12.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "Urgente",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFE11D48)
+                        color = BadgeUrgentText
                     )
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
             pagos.forEach { pago ->
                 PendingPaymentItemRow(pago)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF1F5F9))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DividerColor)
             }
-
             OutlinedButton(
                 onClick = { /* Ver todos */ },
                 modifier = Modifier
@@ -339,33 +314,26 @@ private fun PendingPaymentsSection(pagos: List<Pago>) {
 @Composable
 private fun PendingPaymentItemRow(pago: Pago) {
     val initials = pago.jugadorNombre.split(" ").take(2).joinToString("") { it.take(1).uppercase() }
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar con Iniciales
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .background(Color(0xFFF1F5F9), CircleShape),
+                .background(DividerColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(text = initials, fontWeight = FontWeight.Bold, color = TextDark, fontSize = 14.sp)
         }
-
         Spacer(modifier = Modifier.width(12.dp))
-
-        // Detalles
         Column(modifier = Modifier.weight(1f)) {
             Text(text = pago.jugadorNombre, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextDark)
             Text(text = pago.concepto, fontSize = 12.sp, color = TextMuted)
         }
-
-        // Monto y Fecha
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "€${pago.monto.toInt()}",
+                text = "$${pago.monto.toInt()}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = PrimaryOrange

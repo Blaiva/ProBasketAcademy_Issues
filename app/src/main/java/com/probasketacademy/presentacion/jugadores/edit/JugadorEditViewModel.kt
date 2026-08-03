@@ -3,6 +3,7 @@ package com.probasketacademy.presentacion.jugadores.edit
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.repository.JugadorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -20,7 +21,14 @@ class JugadorEditViewModel @Inject constructor(
 
     init {
         val jugadorId: Long? = savedStateHandle.get<Long>("jugadorId")
-        jugadorId?.let { cargarJugador(it) }
+
+        if (jugadorId != null && jugadorId > 0L) {
+            // Si tiene ID válido, lo cargamos de la DB
+            cargarJugador(jugadorId)
+        } else {
+            // Si es 0L, inicializamos un Jugador vacío para el modo "Crear"
+            _uiState.update { it.copy(jugador = Jugador()) }
+        }
     }
 
     fun onEvent(event: JugadorEditEvent) {

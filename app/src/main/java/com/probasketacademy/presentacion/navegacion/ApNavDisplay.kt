@@ -34,11 +34,9 @@ import com.probasketacademy.presentacion.iniciodesesion.AuthScreen
 import com.probasketacademy.presentacion.home.HomeScreen
 import com.probasketacademy.presentacion.jugadores.edit.JugadorEditScreen
 import com.probasketacademy.presentacion.jugadores.list.JugadoresListScreen
-
-// Colores de tu diseño
-private val PrimaryOrange = Color(0xFFE5634D)
-private val TextMuted = Color(0xFF94A3B8)
-private val IndicatorColor = Color(0xFFFFF7ED)
+import com.probasketacademy.ui.theme.IndicatorColor
+import com.probasketacademy.ui.theme.PrimaryOrange
+import com.probasketacademy.ui.theme.TextMuted
 
 // Modelo para los items del menú
 data class BottomNavItem(
@@ -109,19 +107,17 @@ fun ApNavDisplay(
                         navController.navigate(Screen.JugadorEdit(jugadorId))
                     },
                     onAddJugador = {
-                        // Aquí navegarías a una pantalla de crear jugador vacío
+                        // Navegamos a la pantalla de edición pasando 0L como ID de creación
+                        navController.navigate(Screen.JugadorEdit(0L))
                     }
                 )
             }
 
             // 4. Edición / Detalle de Jugador (Recibe ID)
             composable<Screen.JugadorEdit> { backStackEntry ->
-                // Extraemos el ID de forma segura con Type-Safe Navigation
                 val args = backStackEntry.toRoute<Screen.JugadorEdit>()
-
                 JugadorEditScreen(
                     onNavigateBack = { navController.popBackStack() }
-                    // El ViewModel obtendrá el args.jugadorId a través del SavedStateHandle automáticamente
                 )
             }
 
@@ -150,10 +146,9 @@ private fun ProBasketBottomBar(
 
     NavigationBar(
         containerColor = Color.White,
-        tonalElevation = 8.dp // Sombra suave en la parte superior
+        tonalElevation = 8.dp
     ) {
         items.forEach { item ->
-            // Comprobamos si la ruta actual coincide con la del ítem
             val isSelected = currentDestination?.hierarchy?.any {
                 it.route?.contains(item.route::class.simpleName ?: "") == true
             } == true
@@ -162,7 +157,6 @@ private fun ProBasketBottomBar(
                 selected = isSelected,
                 onClick = {
                     navController.navigate(item.route) {
-                        // Evita que se acumulen múltiples copias de la misma pantalla
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true
                         }
@@ -186,7 +180,7 @@ private fun ProBasketBottomBar(
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = PrimaryOrange,
                     selectedTextColor = PrimaryOrange,
-                    indicatorColor = IndicatorColor, // El fondo sutil cuando está seleccionado
+                    indicatorColor = IndicatorColor,
                     unselectedIconColor = TextMuted,
                     unselectedTextColor = TextMuted
                 )

@@ -35,13 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
-
-private val PrimaryOrange = Color(0xFFE5634D)
-private val LightBackground = Color(0xFFF3F4F6)
-private val CardBackground = Color.White
-private val TextDark = Color(0xFF1E293B)
-private val TextMuted = Color(0xFF94A3B8)
-private val BorderColor = Color(0xFFE2E8F0)
+import com.probasketacademy.ui.theme.BorderColor
+import com.probasketacademy.ui.theme.CardBackground
+import com.probasketacademy.ui.theme.GoogleBlue
+import com.probasketacademy.ui.theme.LightBackgroundAuth
+import com.probasketacademy.ui.theme.PrimaryOrange
+import com.probasketacademy.ui.theme.TextDark
+import com.probasketacademy.ui.theme.TextMuted
 
 @Composable
 fun AuthScreen(
@@ -71,10 +71,11 @@ fun AuthContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(LightBackground)
+            .background(LightBackgroundAuth)
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -97,26 +98,18 @@ fun AuthContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     LogoHeaderSection()
-
                     Spacer(modifier = Modifier.height(24.dp))
-
                     GoogleSignInButton(
                         onClick = { onEvent(AuthEvent.OnGoogleSignInClicked(context)) }
                     )
-
                     Spacer(modifier = Modifier.height(20.dp))
-
                     DividerWithText()
-
                     Spacer(modifier = Modifier.height(20.dp))
-
                     EmailInputField(
                         email = state.email,
                         onEmailChanged = { onEvent(AuthEvent.OnEmailChanged(it)) }
                     )
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     PasswordInputField(
                         password = state.password,
                         isPasswordVisible = state.isPasswordVisible,
@@ -137,16 +130,13 @@ fun AuthContent(
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
-
                     SubmitButton(
                         isLoading = state.isLoading,
                         onClick = { onEvent(AuthEvent.OnLoginClicked) }
                     )
                 }
             }
-
             Spacer(modifier = Modifier.height(24.dp))
-
             FooterSection()
         }
     }
@@ -155,7 +145,6 @@ fun AuthContent(
 @Composable
 private fun LogoHeaderSection() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
         Image(
             painter = painterResource(id = R.drawable.logo_probasket),
             contentDescription = "Logo ProBasketAcademy",
@@ -163,9 +152,7 @@ private fun LogoHeaderSection() {
                 .size(80.dp)
                 .clip(RoundedCornerShape(16.dp))
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
         Text(
             text = buildAnnotatedString {
                 withStyle(style = SpanStyle(color = PrimaryOrange, fontWeight = FontWeight.Bold)) {
@@ -177,9 +164,7 @@ private fun LogoHeaderSection() {
             },
             fontSize = 22.sp
         )
-
         Spacer(modifier = Modifier.height(4.dp))
-
         Text(
             text = "Bienvenido a ProBasketAcademy",
             fontSize = 13.sp,
@@ -205,7 +190,7 @@ private fun GoogleSignInButton(onClick: () -> Unit) {
             Text(
                 text = "G",
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF4285F4),
+                color = GoogleBlue,
                 fontSize = 18.sp
             )
             Spacer(modifier = Modifier.width(12.dp))
@@ -417,7 +402,7 @@ private fun FooterSection() {
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "© 2024 BasketAcademy Pro System",
+            text = "© 2026 BasketAcademy Pro System",
             fontSize = 11.sp,
             color = TextMuted
         )

@@ -26,16 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Jugador
-
-private val HeaderOrange = Color(0xFFB34A1B)
-private val LightBackground = Color(0xFFF4F6F8)
-private val CardBackground = Color.White
-private val TextDark = Color(0xFF1E293B)
-private val TextMuted = Color(0xFF94A3B8)
-private val ChipActiveBg = Color(0xFFFFF7ED)
-private val ChipActiveText = Color(0xFFEA580C)
-private val ChipInactiveBg = Color(0xFFF1F5F9)
-private val ChipInactiveText = Color(0xFF64748B)
+import com.probasketacademy.ui.theme.* // Importamos todo de tu theme
 
 @Composable
 fun JugadoresListScreen(
@@ -91,7 +82,6 @@ fun JugadoresListScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("ProBasketAcademy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
-
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -120,7 +110,6 @@ fun JugadoresListScreen(
                     fontSize = 13.sp,
                     color = TextMuted
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
@@ -131,7 +120,7 @@ fun JugadoresListScreen(
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = Color(0xFFE2E8F0),
+                        unfocusedBorderColor = BorderColor,
                         unfocusedContainerColor = CardBackground,
                         focusedContainerColor = CardBackground
                     ),
@@ -199,7 +188,7 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(Color(0xFFE2E8F0), CircleShape),
+                    .background(BorderColor, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -215,7 +204,6 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
             // Detalles usando el modelo de la DB
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
-                // Utilizamos categoriaNombre y tallaCamiseta para replicar el diseño
                 Text(
                     text = "${jugador.categoriaNombre} • ${jugador.tallaCamiseta.ifEmpty { "Posición N/A" }}",
                     fontSize = 12.sp,
@@ -240,7 +228,7 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
             }
 
             Spacer(modifier = Modifier.width(8.dp))
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFFCBD5E1))
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ChevronColor)
         }
     }
 }
