@@ -20,7 +20,7 @@ interface PagoDao {
             j.nombre AS jugadorNombre,
             j.numeroCamiseta AS numeroCamiseta
         FROM pagos p
-        INNER JOIN jugadores j ON p.jugadorId = j.id
+        INNER JOIN jugadores j ON p.jugadorId = j.jugadorId
         WHERE p.jugadorId = :jugadorId
         ORDER BY p.id DESC
     """)
@@ -37,7 +37,7 @@ interface PagoDao {
             j.nombre AS jugadorNombre,
             j.numeroCamiseta AS numeroCamiseta
         FROM pagos p
-        INNER JOIN jugadores j ON p.jugadorId = j.id
+        INNER JOIN jugadores j ON p.jugadorId = j.jugadorId
         WHERE p.estado = 'PENDIENTE'
         ORDER BY p.id DESC
     """)
