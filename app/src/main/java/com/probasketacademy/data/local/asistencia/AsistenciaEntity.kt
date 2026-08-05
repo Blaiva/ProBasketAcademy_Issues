@@ -12,15 +12,15 @@ import com.probasketacademy.data.local.jugador.JugadorEntity
     foreignKeys = [
         ForeignKey(
             entity = JugadorEntity::class,
-            parentColumns = ["id"],
+            parentColumns = ["jugadorId"],
             childColumns = ["jugadorId"],
-            onDelete = ForeignKey.Companion.CASCADE
+            onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = CategoriaEntity::class,
             parentColumns = ["id"],
             childColumns = ["categoriaId"],
-            onDelete = ForeignKey.Companion.CASCADE
+            onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [Index(value = ["jugadorId"]), Index(value = ["categoriaId"])]

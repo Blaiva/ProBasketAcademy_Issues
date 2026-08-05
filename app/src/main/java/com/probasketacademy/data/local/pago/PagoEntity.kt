@@ -11,7 +11,7 @@ import com.probasketacademy.data.local.jugador.JugadorEntity
     foreignKeys = [
         ForeignKey(
             entity = JugadorEntity::class,
-            parentColumns = ["id"],
+            parentColumns = ["jugadorId"],
             childColumns = ["jugadorId"],
             onDelete = ForeignKey.CASCADE
         )

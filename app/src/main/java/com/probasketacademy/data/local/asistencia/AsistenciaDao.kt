@@ -12,13 +12,13 @@ interface AsistenciaDao {
 
     @Query("""
         SELECT 
-            j.id AS jugadorId,
+            j.jugadorId AS jugadorId,
             j.nombre AS nombreJugador,
             j.fotoUri AS fotoUri,
             a.asistio AS asistio
         FROM jugadores j
-        LEFT JOIN asistencias a ON j.id = a.jugadorId AND a.fechaEpocaMs = :fechaTimestamp
-        WHERE j.categoriaId = :categoriaId AND j.estaActivo = 1
+        LEFT JOIN asistencias a ON j.jugadorId = a.jugadorId AND a.fechaEpocaMs = :fechaTimestamp
+        WHERE j.categoriaId = :categoriaId AND j.estado = 'Activo'
         ORDER BY j.nombre ASC
     """)
     fun obtenerListaAsistenciaPorCategoria(categoriaId: Long, fechaTimestamp: Long): Flow<List<AsistenciaJugadorDto>>

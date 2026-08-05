@@ -4,5 +4,5 @@ data class AsistenciaJugadorDto(
     val jugadorId: Long,
     val nombreJugador: String,
     val fotoUri: String?,
-    val asistio: Boolean
+    val asistio: Boolean?
 )

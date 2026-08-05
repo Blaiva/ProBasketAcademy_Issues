@@ -4,17 +4,18 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    kotlin("plugin.serialization") version "2.0.21"
+    kotlin("plugin.serialization") version "2.1.0"
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.probasketacademy"
-    compileSdk = 37
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.probasketacademy"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -37,6 +38,9 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    kotlinOptions {
+        jvmTarget = "11"
     }
 }
 
@@ -61,9 +65,9 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // Hilt
+    // Hilt (Corregido: solo un procesador KSP para evitar conflictos)
     implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
     // Coil
@@ -82,31 +86,32 @@ dependencies {
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
+    // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // Coroutines & Serialization
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
 
+    // Lifecycle & Navigation
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.navigation.compose)
 
-    ksp(libs.hilt.android.compiler)
-
+    // Testing
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.androidx.core.testing)
     testImplementation(libs.dagger.hilt.android.testing)
-    kspTest(libs.hilt.android.compiler)
     testImplementation(libs.androidx.room.testing)
 
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.dagger.hilt.android.testing)
-    kspAndroidTest(libs.hilt.android.compiler)
 
     debugImplementation(libs.androidx.ui.test.manifest)
 }

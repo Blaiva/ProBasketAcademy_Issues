@@ -10,7 +10,7 @@ import com.probasketacademy.data.local.categoria.CategoriaEntity
     foreignKeys = [
         ForeignKey(
             entity = CategoriaEntity::class,
-            parentColumns = ["categoriaId"],
+            parentColumns = ["id"],
             childColumns = ["categoriaId"],
             onDelete = ForeignKey.CASCADE
         )
@@ -28,6 +28,7 @@ data class JugadorEntity(
 
     val categoriaId: Long,
     val tallaCamiseta: String,
+    val numeroCamiseta: Int = 0,
     val estatura: Double,
     val peso: Double,
 

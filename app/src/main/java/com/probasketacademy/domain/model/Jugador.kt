@@ -8,6 +8,7 @@ data class Jugador(
     val domicilio: String = "",
     val categoriaId: Long = 0,
     val tallaCamiseta: String = "",
+    val numeroCamiseta: Int = 0,
     val estatura: Double = 0.0,
     val peso: Double = 0.0,
     val tutorNombre: String = "",

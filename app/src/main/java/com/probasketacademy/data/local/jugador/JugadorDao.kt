@@ -14,7 +14,7 @@ interface JugadorDao {
     @Query("""
         SELECT j.*, c.nombre AS categoriaNombre
         FROM jugadores j
-        INNER JOIN categorias c ON j.categoriaId = c.Id
+        INNER JOIN categorias c ON j.categoriaId = c.id
         WHERE j.jugadorId = :id
     """)
     fun obtenerJugadorConCategoriaPorId(id: Long): Flow<JugadorConCategoriaDto?>
@@ -22,7 +22,7 @@ interface JugadorDao {
     @Query("""
         SELECT j.*, c.nombre AS categoriaNombre
         FROM jugadores j
-        INNER JOIN categorias c ON j.categoriaId = c.Id
+        INNER JOIN categorias c ON j.categoriaId = c.id
         ORDER BY j.nombre ASC
     """)
     fun obtenerJugadoresConCategoria(): Flow<List<JugadorConCategoriaDto>>
@@ -30,7 +30,7 @@ interface JugadorDao {
     @Query("""
         SELECT j.*, c.nombre AS categoriaNombre
         FROM jugadores j
-        INNER JOIN categorias c ON j.categoriaId = c.Id
+        INNER JOIN categorias c ON j.categoriaId = c.id
         WHERE j.categoriaId = :categoriaId
         ORDER BY j.nombre ASC
     """)
@@ -39,7 +39,7 @@ interface JugadorDao {
     @Query("""
         SELECT j.*, c.nombre AS categoriaNombre
         FROM jugadores j
-        INNER JOIN categorias c ON j.categoriaId = c.Id
+        INNER JOIN categorias c ON j.categoriaId = c.id
         WHERE j.nombre LIKE '%' || :query || '%'
         ORDER BY j.nombre ASC
     """)

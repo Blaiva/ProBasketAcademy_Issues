@@ -14,7 +14,7 @@ interface CategoriaDao {
         SELECT 
             c.id AS id,
             c.nombre AS nombre,
-            COUNT(j.id) AS totalJugadores
+            COUNT(j.jugadorId) AS totalJugadores
         FROM categorias c
         LEFT JOIN jugadores j ON c.id = j.categoriaId
         GROUP BY c.id
