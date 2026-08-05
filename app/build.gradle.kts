@@ -114,4 +114,6 @@ dependencies {
     androidTestImplementation(libs.dagger.hilt.android.testing)
 
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    testImplementation(libs.turbine)
 }
