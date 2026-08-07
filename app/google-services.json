@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1080793708305",
+    "project_id": "probasketacademy-dc602",
+    "storage_bucket": "probasketacademy-dc602.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1080793708305:android:f70e34a166ab7fed723eb0",
+        "android_client_info": {
+          "package_name": "com.probasketacademy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD24P9Y0wUCOWgE5i6R8pXpf4KVOTM7oE8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
