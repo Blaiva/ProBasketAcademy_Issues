@@ -35,11 +35,11 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> {
         return try {
-            // 1. Configurar opción de Google ID (Pega aquí tu Web Client ID)
+
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
-                .setServerClientId("176484231380-u4nfsn1ruhn813nn604pq49ipjum8cq4.apps.googleusercontent.com")
-                .setAutoSelectEnabled(true)
+                .setServerClientId("google-services.json")
+                .setAutoSelectEnabled(false)
                 .build()
 
             val request = GetCredentialRequest.Builder()

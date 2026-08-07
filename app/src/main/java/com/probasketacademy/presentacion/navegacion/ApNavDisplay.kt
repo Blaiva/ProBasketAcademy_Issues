@@ -30,16 +30,25 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+
+// --- IMPORTACIONES DE TODAS TUS PANTALLAS ---
 import com.probasketacademy.presentacion.iniciodesesion.AuthScreen
 import com.probasketacademy.presentacion.home.HomeScreen
-import com.probasketacademy.presentacion.jugadores.edit.JugadorEditScreen
 import com.probasketacademy.presentacion.jugadores.list.JugadoresListScreen
-import com.probasketacademy.presentacion.categorias.list.CategoriasListScreen // Importación agregada
+import com.probasketacademy.presentacion.jugadores.edit.JugadorEditScreen
+import com.probasketacademy.presentacion.categorias.list.CategoriasListScreen
+import com.probasketacademy.presentacion.categorias.asignar.CategoriaAsignarScreen
+import com.probasketacademy.presentacion.categorias.detalle.CategoriaDetalleScreen
+import com.probasketacademy.presentacion.asistencias.AsistenciasScreen
+import com.probasketacademy.presentacion.eventos.EventosScreen
+import com.probasketacademy.presentacion.finanzas.PagosScreen
+
+// --- IMPORTACIONES DE TU TEMA ---
 import com.probasketacademy.ui.theme.IndicatorColor
 import com.probasketacademy.ui.theme.PrimaryOrange
 import com.probasketacademy.ui.theme.TextMuted
 
-// Modelo para los items del menú
+// Modelo para los items del menú inferior
 data class BottomNavItem(
     val title: String,
     val route: Screen,
@@ -108,13 +117,12 @@ fun ApNavDisplay(
                         navController.navigate(Screen.JugadorEdit(jugadorId))
                     },
                     onAddJugador = {
-                        // Navegamos a la pantalla de edición pasando 0L como ID de creación
                         navController.navigate(Screen.JugadorEdit(0L))
                     }
                 )
             }
 
-            // 4. Edición / Detalle de Jugador (Recibe ID)
+            // 4. Edición / Detalle de Jugador
             composable<Screen.JugadorEdit> { backStackEntry ->
                 val args = backStackEntry.toRoute<Screen.JugadorEdit>()
                 JugadorEditScreen(
@@ -132,27 +140,45 @@ fun ApNavDisplay(
                         navController.navigate(Screen.CategoriaDetalle(categoriaId))
                     },
                     onAddCategoria = {
-                        // Acción para agregar categoría en el futuro
+                        // Acción para agregar categoría (manejada internamente en la pantalla)
                     }
                 )
             }
 
+            // 5.1 Asignar Jugador a Categoría
             composable<Screen.CategoriaAsignar> {
-                com.probasketacademy.presentacion.categorias.asignar.CategoriaAsignarScreen(
+                CategoriaAsignarScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
 
+            // 5.2 Ver Detalles de Categoría
             composable<Screen.CategoriaDetalle> {
-                com.probasketacademy.presentacion.categorias.detalle.CategoriaDetalleScreen(
+                CategoriaDetalleScreen(
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
 
-            // --- Placeholders para las demás pantallas ---
-            composable<Screen.Eventos> { Text("Calendario Próximamente", modifier = Modifier.padding(16.dp)) }
-            composable<Screen.Asistencias> { Text("Asistencia Próximamente", modifier = Modifier.padding(16.dp)) }
-            composable<Screen.Pagos> { Text("Finanzas Próximamente", modifier = Modifier.padding(16.dp)) }
+            // 6. PASE DE LISTA (ASISTENCIAS)
+            composable<Screen.Asistencias> {
+                AsistenciasScreen(
+                    onNavigateBack = {
+                        navController.navigate(Screen.Home) {
+                            popUpTo(Screen.Home) { inclusive = false }
+                        }
+                    }
+                )
+            }
+
+            // 7. CALENDARIO Y EVENTOS
+            composable<Screen.Eventos> {
+                EventosScreen()
+            }
+
+            // 8. FINANZAS / PAGOS
+            composable<Screen.Pagos> {
+                PagosScreen()
+            }
         }
     }
 }
