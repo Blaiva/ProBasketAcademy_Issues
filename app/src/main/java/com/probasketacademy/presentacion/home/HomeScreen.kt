@@ -1,7 +1,8 @@
 package com.probasketacademy.presentacion.home
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.probasketacademy.R
 import com.probasketacademy.domain.model.Pago
 import com.probasketacademy.ui.theme.* // Importamos todo de tu theme
 
@@ -36,96 +39,116 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LazyColumn(
+    // Usamos un Column principal para que el Header ocupe todo el ancho
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(LightBackgroundHome)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp)
     ) {
-        item { HomeHeader(onLogout) }
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            HomeTitleSection()
-        }
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            StatCard(
-                title = "JUGADORES ACTIVOS",
-                value = state.jugadoresActivos.toString(),
-                trendText = "+12 este mes",
-                trendColor = GreenTrend,
-                icon = Icons.Default.Group,
-                iconColor = PrimaryOrange
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            StatCard(
-                title = "ASISTENCIA PROMEDIO",
-                value = state.asistenciaPromedio,
-                trendText = "Estable",
-                trendColor = TextMuted,
-                icon = Icons.Default.CalendarMonth,
-                iconColor = BlueIcon
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            StatCard(
-                title = "INGRESOS JUL",
-                value = state.ingresosMes,
-                trendText = "+15% vs mes anterior",
-                trendColor = GreenTrend,
-                icon = Icons.Default.Payments,
-                iconColor = GreenTrend
-            )
-        }
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            FinancialChartCard()
-        }
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            PendingPaymentsSection(pagos = state.cobrosPendientes)
+        // 1. Encabezado Naranja Estándar
+        HomeHeader(onLogout)
+
+        // 2. Contenido Scrolleable
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 24.dp, bottom = 32.dp)
+        ) {
+            item {
+                HomeTitleSection()
+            }
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                StatCard(
+                    title = "JUGADORES ACTIVOS",
+                    value = state.jugadoresActivos.toString(),
+                    trendText = "+12 este mes",
+                    trendColor = GreenTrend,
+                    icon = Icons.Default.Group,
+                    iconColor = PrimaryOrange
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                StatCard(
+                    title = "ASISTENCIA PROMEDIO",
+                    value = state.asistenciaPromedio,
+                    trendText = "Estable",
+                    trendColor = TextMuted,
+                    icon = Icons.Default.CalendarMonth,
+                    iconColor = BlueIcon
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                StatCard(
+                    title = "INGRESOS JUL",
+                    value = state.ingresosMes,
+                    trendText = "+15% vs mes anterior",
+                    trendColor = GreenTrend,
+                    icon = Icons.Default.Payments,
+                    iconColor = GreenTrend
+                )
+            }
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                FinancialChartCard()
+            }
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+                PendingPaymentsSection(pagos = state.cobrosPendientes)
+            }
         }
     }
 }
 
 @Composable
 private fun HomeHeader(onLogout: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(HeaderOrange, RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
+            .padding(horizontal = 16.dp, vertical = 20.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color.White, CircleShape)
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_probasket),
+                        contentDescription = "Logo",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "ProBasketAcademy",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.White
+                )
+            }
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .background(PrimaryOrange, CircleShape),
+                    .size(36.dp)
+                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                    .clip(CircleShape)
+                    .clickable { onLogout() },
                 contentAlignment = Alignment.Center
             ) {
-                Canvas(modifier = Modifier.size(16.dp)) {
-                    drawCircle(color = Color.White)
-                }
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Cerrar Sesión",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "ProBasketAcademy",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = TextDark
-            )
-        }
-        IconButton(
-            onClick = onLogout,
-            modifier = Modifier
-                .size(36.dp)
-                .background(BorderColor, CircleShape)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Perfil / Cerrar Sesión",
-                tint = TextDark,
-                modifier = Modifier.size(20.dp)
-            )
         }
     }
 }

@@ -22,49 +22,8 @@ class AuthViewModel @Inject constructor(
 
     fun onEvent(event: AuthEvent) {
         when (event) {
-            is AuthEvent.OnEmailChanged -> {
-                _uiState.update { it.copy(email = event.email, errorMessage = null) }
-            }
-            is AuthEvent.OnPasswordChanged -> {
-                _uiState.update { it.copy(password = event.password, errorMessage = null) }
-            }
-            is AuthEvent.OnTogglePasswordVisibility -> {
-                _uiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
-            }
-            is AuthEvent.OnLoginClicked -> {
-                loginWithEmail()
-            }
             is AuthEvent.OnGoogleSignInClicked -> {
                 loginWithGoogle(event.context)
-            }
-            is AuthEvent.OnForgotPasswordClicked -> {
-                // Lógica de recuperación de contraseña
-            }
-        }
-    }
-
-    private fun loginWithEmail() {
-        val email = _uiState.value.email.trim()
-        val password = _uiState.value.password.trim()
-
-        if (email.isEmpty() || password.isEmpty()) {
-            _uiState.update { it.copy(errorMessage = "Ingrese correo y contraseña") }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            runCatching {
-                authRepository.login(email, password)
-            }.onSuccess {
-                _uiState.update { it.copy(isLoading = false, isAuthenticated = true) }
-            }.onFailure { exception ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = exception.localizedMessage ?: "Error de autenticación"
-                    )
-                }
             }
         }
     }
