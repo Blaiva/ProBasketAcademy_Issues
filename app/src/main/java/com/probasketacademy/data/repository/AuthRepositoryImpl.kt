@@ -9,36 +9,21 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.probasketacademy.domain.repository.AuthRepository
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
-
-interface AuthRepository {
-    suspend fun login(email: String, password: String): Result<FirebaseUser>
-    suspend fun signInWithGoogle(context: Context): Result<FirebaseUser>
-    suspend fun signOut()
-    fun getCurrentUser(): FirebaseUser?
-}
 
 class AuthRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth,
     private val credentialManager: CredentialManager
 ) : AuthRepository {
 
-    override suspend fun login(email: String, password: String): Result<FirebaseUser> {
-        return try {
-            val result = auth.signInWithEmailAndPassword(email, password).await()
-            Result.success(result.user!!)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
     override suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> {
         return try {
 
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
-                .setServerClientId("google-services.json")
+                .setServerClientId("google-services.json") //Colocar el ClientId correcto
                 .setAutoSelectEnabled(false)
                 .build()
 
