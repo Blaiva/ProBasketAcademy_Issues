@@ -24,10 +24,15 @@ import com.probasketacademy.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriaDetalleScreen(
+    categoriaId: Long,
     onNavigateBack: () -> Unit,
     viewModel: CategoriaDetalleViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(categoriaId) {
+        viewModel.cargarJugadoresDeCategoria(categoriaId)
+    }
 
     Scaffold(
         topBar = {

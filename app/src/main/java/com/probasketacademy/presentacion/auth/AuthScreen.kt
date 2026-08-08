@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.iniciodesesion
+package com.probasketacademy.presentacion.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

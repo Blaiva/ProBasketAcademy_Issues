@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.iniciodesesion
+package com.probasketacademy.presentacion.auth
 
 import android.content.Context
 
