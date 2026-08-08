@@ -29,11 +29,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Pago
+import com.probasketacademy.presentacion.navegacion.Screen
 import com.probasketacademy.ui.theme.* // Importamos todo de tu theme
 
 @Composable
 fun HomeScreen(
-    onNavigateTo: (Any) -> Unit,
+    onNavigateTo: (Screen) -> Unit,
     onLogout: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
