@@ -23,7 +23,7 @@ class AuthRepositoryImpl @Inject constructor(
 
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
-                .setServerClientId("google-services.json") //Colocar el ClientId correcto
+                .setServerClientId("1080793708305-5q36dsqolq80geg56a65h7ddigck070b.apps.googleusercontent.com")
                 .setAutoSelectEnabled(false)
                 .build()
 
