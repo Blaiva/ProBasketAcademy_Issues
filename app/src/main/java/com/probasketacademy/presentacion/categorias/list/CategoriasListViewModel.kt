@@ -27,27 +27,37 @@ class CategoriasListViewModel @Inject constructor(
     private fun cargarCategorias() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            categoriaRepository.obtenerCategoriasConConteo().collectLatest { list -> _uiState.update { it.copy(isLoading = false, categorias = list, message = null) } }
+            categoriaRepository.obtenerCategoriasConConteo().collectLatest { list -> _uiState.update { it.copy(isLoading = false, categorias = list, errorMessage = null) } }
         }
     }
 
     fun onEvent(event: CategoriasListEvent) {
         when (event) {
+            is CategoriasListEvent.OnNombreCategoriaChanged -> {
+                _uiState.update { it.copy(nombreCategoria = event.nombre, nombreError = null) }
+            }
+            is CategoriasListEvent.OnShowDialogChanged -> {
+                _uiState.update {
+                    it.copy(
+                        showDialog = event.show,
+                        nombreCategoria = "",
+                        nombreError = null
+                    )
+                }
+            }
             is CategoriasListEvent.OnGuardarCategoria -> onSave()
         }
     }
 
-    private fun onSave(){
+    private fun onSave() {
         viewModelScope.launch {
-            val nombre = uiState.value.nombre
+            val nombre = uiState.value.nombreCategoria
             val nombresExistentes = categoriaRepository.obtenerCategoriasConConteo().first().map { it.nombre }
 
             val nombreValidation = validarNombreCategoria(nombre, nombresExistentes)
 
-            if(!nombreValidation.isValid){
-                _uiState.update { it.copy(
-                    nombreError = nombreValidation.error
-                ) }
+            if (!nombreValidation.isValid) {
+                _uiState.update { it.copy(nombreError = nombreValidation.error) }
                 return@launch
             }
 
@@ -60,11 +70,18 @@ class CategoriasListViewModel @Inject constructor(
             result.onSuccess {
                 _uiState.update {
                     it.copy(
-                        isSaving = false
+                        isSaving = false,
+                        showDialog = false,
+                        nombreCategoria = ""
                     )
                 }
-            }.onFailure {
-                _uiState.update { it.copy(isSaving = false) }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        errorMessage = error.message ?: "Error al guardar la categoría"
+                    )
+                }
             }
         }
     }

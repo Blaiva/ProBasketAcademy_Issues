@@ -122,13 +122,8 @@ fun AppNavDisplay(
 
                 entry<Screen.Categorias> {
                     CategoriasListScreen(
-                        onNavigateToAsignarJugador = { categoriaId ->
-                            backStack.add(Screen.CategoriaAsignar(categoriaId))
-                        },
                         onNavigateToVerEditar = { categoriaId ->
                             backStack.add(Screen.CategoriaDetalle(categoriaId))
-                        },
-                        onAddCategoria = {
                         }
                     )
                 }

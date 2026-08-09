@@ -28,56 +28,58 @@ import com.probasketacademy.ui.theme.*
 
 @Composable
 fun CategoriasListScreen(
-    onNavigateToAsignarJugador: (Long) -> Unit,
     onNavigateToVerEditar: (Long) -> Unit,
-    onAddCategoria: () -> Unit, // Lo mantenemos para no romper la navegación en ApNavDisplay
     viewModel: CategoriasListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    // Variables de estado para controlar el cuadro de diálogo
-    var showDialog by remember { mutableStateOf(false) }
-    var newCategoriaName by remember { mutableStateOf("") }
-
-    // --- CUADRO DE DIÁLOGO PARA CREAR CATEGORÍA ---
-    if (showDialog) {
+    if (state.showDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = { viewModel.onEvent(CategoriasListEvent.OnShowDialogChanged(false)) },
             title = { Text("Nueva Categoría", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
-                OutlinedTextField(
-                    value = newCategoriaName,
-                    onValueChange = { newCategoriaName = it },
-                    label = { Text("Nombre de la categoría") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryOrange,
-                        unfocusedBorderColor = BorderColor,
-                        focusedContainerColor = CardBackground,
-                        unfocusedContainerColor = CardBackground
+                Column {
+                    OutlinedTextField(
+                        value = state.nombreCategoria,
+                        onValueChange = { viewModel.onEvent(CategoriasListEvent.OnNombreCategoriaChanged(it)) },
+                        label = { Text("Nombre de la categoría") },
+                        isError = state.nombreError != null,
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryOrange,
+                            unfocusedBorderColor = BorderColor,
+                            focusedContainerColor = CardBackground,
+                            unfocusedContainerColor = CardBackground
+                        )
                     )
-                )
+                    state.nombreError?.let { error ->
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = error, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                    }
+                }
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        if (newCategoriaName.isNotBlank()) {
-                            viewModel.onEvent(CategoriasListEvent.OnGuardarCategoria(newCategoriaName))
-                            showDialog = false
-                            newCategoriaName = "" // Limpiamos el texto
-                        }
-                    },
+                    onClick = { viewModel.onEvent(CategoriasListEvent.OnGuardarCategoria) },
+                    enabled = !state.isSaving,
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) {
-                    Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold)
+                    if (state.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showDialog = false
-                    newCategoriaName = ""
-                }) {
+                TextButton(
+                    onClick = { viewModel.onEvent(CategoriasListEvent.OnShowDialogChanged(false)) }
+                ) {
                     Text("Cancelar", color = TextMuted)
                 }
             },
@@ -88,9 +90,7 @@ fun CategoriasListScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    showDialog = true // Mostramos el diálogo en lugar de navegar
-                },
+                onClick = { viewModel.onEvent(CategoriasListEvent.OnShowDialogChanged(true)) },
                 containerColor = HeaderOrange,
                 contentColor = Color.White,
                 shape = CircleShape
@@ -105,7 +105,7 @@ fun CategoriasListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // --- NUEVO ENCABEZADO CON LOGO Y PERFIL ---
+            // ENCABEZADO CON LOGO Y PERFIL
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -179,12 +179,7 @@ fun CategoriasListScreen(
                     items(state.categorias) { categoria ->
                         CategoriaItemCard(
                             categoria = categoria,
-                            onAsignarClick = {
-                                viewModel.onEvent(CategoriasListEvent.OnAsignarJugadorClicked(categoria.id))
-                                onNavigateToAsignarJugador(categoria.id)
-                            },
-                            onVerEditarClick = {
-                                viewModel.onEvent(CategoriasListEvent.OnVerEditarClicked(categoria.id))
+                            onClick = {
                                 onNavigateToVerEditar(categoria.id)
                             }
                         )
@@ -198,10 +193,10 @@ fun CategoriasListScreen(
 @Composable
 private fun CategoriaItemCard(
     categoria: Categoria,
-    onAsignarClick: () -> Unit,
-    onVerEditarClick: () -> Unit
+    onClick: () -> Unit
 ) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         shape = RoundedCornerShape(16.dp),
@@ -209,7 +204,6 @@ private fun CategoriaItemCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Ícono
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -219,7 +213,6 @@ private fun CategoriaItemCard(
                     Icon(Icons.Default.Groups, contentDescription = null, tint = HeaderOrange)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                // Textos
                 Column {
                     Text(
                         text = categoria.nombre,
@@ -242,37 +235,7 @@ private fun CategoriaItemCard(
                                 color = ActiveBadgeText
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Gestionar roster",
-                            fontSize = 12.sp,
-                            color = TextMuted
-                        )
                     }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            // Botones
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = onAsignarClick,
-                    modifier = Modifier.weight(1f).height(40.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Asignar Jugador", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                OutlinedButton(
-                    onClick = onVerEditarClick,
-                    modifier = Modifier.weight(1f).height(40.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(HeaderOrange)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = HeaderOrange)
-                ) {
-                    Text("Ver/Editar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

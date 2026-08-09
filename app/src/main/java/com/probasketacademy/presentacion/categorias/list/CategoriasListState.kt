@@ -5,8 +5,9 @@ import com.probasketacademy.domain.model.Categoria
 data class CategoriasListState(
     val isLoading: Boolean = false,
     val categorias: List<Categoria> = emptyList(),
-    val nombre: String = "",
+    val nombreCategoria: String = "",
     val nombreError: String? = null,
-    val message: String? = null,
-    val isSaving: Boolean = false
+    val errorMessage: String? = null,
+    val isSaving: Boolean = false,
+    val showDialog: Boolean = false,
 )
