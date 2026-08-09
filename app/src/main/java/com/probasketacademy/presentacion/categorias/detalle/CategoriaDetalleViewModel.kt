@@ -3,6 +3,7 @@ package com.probasketacademy.presentacion.categorias.detalle
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.repository.JugadorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -11,18 +12,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CategoriaDetalleViewModel @Inject constructor(
-    private val jugadorRepository: JugadorRepository,
-    savedStateHandle: SavedStateHandle
+    private val jugadorRepository: JugadorRepository
 ) : ViewModel() {
-
-    val categoriaId: Long = checkNotNull(savedStateHandle["categoriaId"])
 
     private val _uiState = MutableStateFlow(CategoriaDetalleState())
     val uiState: StateFlow<CategoriaDetalleState> = _uiState.asStateFlow()
-
-    init {
-        cargarJugadoresDeCategoria()
-    }
 
     fun onEvent(event: CategoriaDetalleEvent) {
         when (event) {
@@ -30,7 +24,7 @@ class CategoriaDetalleViewModel @Inject constructor(
         }
     }
 
-    private fun cargarJugadoresDeCategoria() {
+    fun cargarJugadoresDeCategoria(categoriaId: Long) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             jugadorRepository.obtenerJugadores()
@@ -43,11 +37,11 @@ class CategoriaDetalleViewModel @Inject constructor(
         }
     }
 
-    private fun removerJugador(jugador: com.probasketacademy.domain.model.Jugador) {
+    private fun removerJugador(jugador: Jugador) {
         viewModelScope.launch {
             // Se asume que 0L significa sin categoría
             jugadorRepository.guardarJugador(jugador.copy(categoriaId = 0L, categoriaNombre = ""))
-            cargarJugadoresDeCategoria() // Recargar
+            cargarJugadoresDeCategoria(jugador.categoriaId) // Recargar
         }
     }
 }

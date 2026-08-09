@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.iniciodesesion
+package com.probasketacademy.presentacion.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -36,17 +35,17 @@ fun AuthScreen(
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(state.isAuthenticated) {
-        if (state.isAuthenticated) {
+    LaunchedEffect(state.user) {
+        if (state.user != null) {
             onLoginSuccess()
         }
     }
 
     AuthContent(
         state = state,
-        onEvent = viewModel::onEvent,
+        onEvent = viewModel::proccessIntent,
         modifier = modifier
     )
 }

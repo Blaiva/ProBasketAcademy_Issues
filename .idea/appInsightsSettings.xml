@@ -9,9 +9,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.probasketacademy" />
-                  <option name="mobileSdkAppId" value="1:176484231380:android:51c87b2c43e90a80847341" />
-                  <option name="projectId" value="fir-7b616" />
-                  <option name="projectNumber" value="176484231380" />
+                  <option name="mobileSdkAppId" value="1:1080793708305:android:f70e34a166ab7fed723eb0" />
+                  <option name="projectId" value="probasketacademy-dc602" />
+                  <option name="projectNumber" value="1080793708305" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

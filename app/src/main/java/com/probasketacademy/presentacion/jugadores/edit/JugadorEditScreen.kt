@@ -29,11 +29,16 @@ import com.probasketacademy.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JugadorEditScreen(
+    jugadorId: Long,
     onNavigateBack: () -> Unit,
     viewModel: JugadorEditViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val jugador = state.jugador
+
+    LaunchedEffect(jugadorId) {
+        viewModel.cargarJugador(jugadorId)
+    }
 
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) {

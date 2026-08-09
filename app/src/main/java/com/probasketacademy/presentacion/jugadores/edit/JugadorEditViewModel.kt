@@ -12,24 +12,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class JugadorEditViewModel @Inject constructor(
-    private val jugadorRepository: JugadorRepository,
-    savedStateHandle: SavedStateHandle
+    private val jugadorRepository: JugadorRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(JugadorEditState())
     val uiState: StateFlow<JugadorEditState> = _uiState.asStateFlow()
-
-    init {
-        val jugadorId: Long? = savedStateHandle.get<Long>("jugadorId")
-
-        if (jugadorId != null && jugadorId > 0L) {
-            // Si tiene ID válido, lo cargamos de la DB
-            cargarJugador(jugadorId)
-        } else {
-            // Si es 0L, inicializamos un Jugador vacío para el modo "Crear"
-            _uiState.update { it.copy(jugador = Jugador()) }
-        }
-    }
 
     fun onEvent(event: JugadorEditEvent) {
         when (event) {
@@ -37,7 +24,7 @@ class JugadorEditViewModel @Inject constructor(
         }
     }
 
-    private fun cargarJugador(id: Long) {
+    fun cargarJugador(id: Long) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             jugadorRepository.obtenerJugadorPorId(id)

@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.probasketacademy"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.probasketacademy"
@@ -29,11 +29,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-    }
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
         }
     }
     compileOptions {
@@ -120,20 +115,6 @@ dependencies {
 
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    testImplementation(libs.turbine)
-
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.robolectric:robolectric:4.13")
-
-
-    // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:34.17.0"))
-    // TODO: Add the dependencies for Firebase products you want to use
-    // When using the BoM, don't specify versions in Firebase dependencies
-    implementation("com.google.firebase:firebase-analytics")
-    // Add the dependencies for any other desired Firebase products
-    // https://firebase.google.com/docs/android/setup#available-libraries
-    implementation("androidx.credentials:credentials:1.2.2")
-    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
 }
