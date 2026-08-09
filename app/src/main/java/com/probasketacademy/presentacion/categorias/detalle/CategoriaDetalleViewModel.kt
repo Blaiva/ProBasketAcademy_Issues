@@ -3,8 +3,15 @@ package com.probasketacademy.presentacion.categorias.detalle
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.probasketacademy.domain.model.Categoria
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.repository.JugadorRepository
+import com.probasketacademy.domain.usecase.categoria.GuardarCategoriaUseCase
+import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriaPorIdUseCase
+import com.probasketacademy.domain.usecase.jugadores.AsignarJugadoresACategoriaUseCase
+import com.probasketacademy.domain.usecase.jugadores.ObtenerJugadoresPorCategoriaUseCase
+import com.probasketacademy.domain.usecase.jugadores.ObtenerJugadoresSinCategoriaUseCase
+import com.probasketacademy.domain.usecase.jugadores.RemoverJugadorDeCategoriaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -12,7 +19,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CategoriaDetalleViewModel @Inject constructor(
-    private val jugadorRepository: JugadorRepository
+    private val obtenerCategoriaPorIdUseCase: ObtenerCategoriaPorIdUseCase,
+    private val guardarCategoriaUseCase: GuardarCategoriaUseCase,
+    private val obtenerJugadoresPorCategoriaUseCase: ObtenerJugadoresPorCategoriaUseCase,
+    private val obtenerJugadoresSinCategoriaUseCase: ObtenerJugadoresSinCategoriaUseCase,
+    private val asignarJugadoresACategoriaUseCase: AsignarJugadoresACategoriaUseCase,
+    private val removerJugadorDeCategoriaUseCase: RemoverJugadorDeCategoriaUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CategoriaDetalleState())
@@ -20,28 +32,113 @@ class CategoriaDetalleViewModel @Inject constructor(
 
     fun onEvent(event: CategoriaDetalleEvent) {
         when (event) {
+            is CategoriaDetalleEvent.OnCargarDetalle -> cargarDetalle(event.categoriaId)
+            is CategoriaDetalleEvent.OnNombreCategoriaChanged -> {
+                _uiState.update { it.copy(nombreCategoria = event.nombre, nombreError = null) }
+            }
+
+            is CategoriaDetalleEvent.OnGuardarNombreCategoria -> guardarNombreCategoria()
+            is CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged -> {
+                _uiState.update {
+                    it.copy(
+                        showAddJugadoresDialog = event.show,
+                        selectedJugadoresIds = emptySet()
+                    )
+                }
+            }
+
+            is CategoriaDetalleEvent.OnJugadorSelectionToggled -> {
+                _uiState.update { state ->
+                    val currentSet = state.selectedJugadoresIds.toMutableSet()
+                    if (currentSet.contains(event.jugadorId)) {
+                        currentSet.remove(event.jugadorId)
+                    } else {
+                        currentSet.add(event.jugadorId)
+                    }
+                    state.copy(selectedJugadoresIds = currentSet)
+                }
+            }
+
+            is CategoriaDetalleEvent.OnAsignarJugadoresSeleccionados -> asignarJugadoresSeleccionados()
             is CategoriaDetalleEvent.OnRemoverJugador -> removerJugador(event.jugador)
         }
     }
 
-    fun cargarJugadoresDeCategoria(categoriaId: Long) {
+    private fun cargarDetalle(categoriaId: Long) {
+        _uiState.update { it.copy(categoriaId = categoriaId, isLoading = true) }
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            jugadorRepository.obtenerJugadores()
-                .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
-                .collect { lista ->
-                    // Filtramos solo los de esta categoría
-                    val filtrados = lista.filter { it.categoriaId == categoriaId }
-                    _uiState.update { it.copy(isLoading = false, jugadores = filtrados) }
+            obtenerCategoriaPorIdUseCase(categoriaId).collectLatest { cat ->
+                cat?.let { categoria ->
+                    _uiState.update { state ->
+                        if (state.nombreCategoria.isEmpty()) {
+                            state.copy(nombreCategoria = categoria.nombre)
+                        } else state
+                    }
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            obtenerJugadoresPorCategoriaUseCase(categoriaId).collectLatest { list ->
+                _uiState.update { it.copy(jugadoresAsignados = list, isLoading = false) }
+            }
+        }
+
+        viewModelScope.launch {
+            obtenerJugadoresSinCategoriaUseCase().collectLatest { list ->
+                _uiState.update { it.copy(jugadoresSinCategoria = list) }
+            }
+        }
+    }
+
+    private fun guardarNombreCategoria() {
+        val nombre = uiState.value.nombreCategoria.trim()
+        if (nombre.isBlank()) {
+            _uiState.update { it.copy(nombreError = "El nombre no puede estar vacío") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSavingNombre = true) }
+            val categoria = Categoria(
+                id = uiState.value.categoriaId,
+                nombre = nombre
+            )
+            val result = guardarCategoriaUseCase(categoria)
+            result.onSuccess {
+                _uiState.update { it.copy(isSavingNombre = false, errorMessage = null) }
+            }.onFailure { error ->
+                _uiState.update { it.copy(isSavingNombre = false, errorMessage = error.message) }
+            }
+        }
+    }
+
+    private fun asignarJugadoresSeleccionados() {
+        val selectedIds = uiState.value.selectedJugadoresIds
+        if (selectedIds.isEmpty()) return
+
+        val jugadoresAAsignar =
+            uiState.value.jugadoresSinCategoria.filter { selectedIds.contains(it.jugadorId) }
+        val categoriaId = uiState.value.categoriaId
+        val categoriaNombre = uiState.value.nombreCategoria
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAssigning = true) }
+            asignarJugadoresACategoriaUseCase(jugadoresAAsignar, categoriaId, categoriaNombre)
+            _uiState.update {
+                it.copy(
+                    isAssigning = false,
+                    showAddJugadoresDialog = false,
+                    selectedJugadoresIds = emptySet()
+                )
+            }
         }
     }
 
     private fun removerJugador(jugador: Jugador) {
         viewModelScope.launch {
-            // Se asume que 0L significa sin categoría
-            jugadorRepository.guardarJugador(jugador.copy(categoriaId = 0L, categoriaNombre = ""))
-            cargarJugadoresDeCategoria(jugador.categoriaId) // Recargar
+            removerJugadorDeCategoriaUseCase(jugador)
         }
     }
 }
