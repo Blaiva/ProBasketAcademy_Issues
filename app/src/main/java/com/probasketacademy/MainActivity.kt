@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.probasketacademy.presentacion.navegacion.ApNavDisplay
+import androidx.navigation3.runtime.rememberNavBackStack
+import com.probasketacademy.presentacion.navegacion.AppNavDisplay
+import com.probasketacademy.presentacion.navegacion.Screen
 import com.probasketacademy.ui.theme.ProBasketAcademyTheme
 
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,8 +23,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             ProBasketAcademyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    ApNavDisplay(
-                        modifier = Modifier.padding(innerPadding)
+                    AppNavDisplay(
+                        backStack = rememberNavBackStack(Screen.Home),
+                        innerPadding = innerPadding
                     )
                 }
             }
