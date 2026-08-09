@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Categoria
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.repository.JugadorRepository
+import com.probasketacademy.domain.usecase.categoria.EliminarCategoriaUseCase
 import com.probasketacademy.domain.usecase.categoria.GuardarCategoriaUseCase
 import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriaPorIdUseCase
 import com.probasketacademy.domain.usecase.jugadores.AsignarJugadoresACategoriaUseCase
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class CategoriaDetalleViewModel @Inject constructor(
     private val obtenerCategoriaPorIdUseCase: ObtenerCategoriaPorIdUseCase,
     private val guardarCategoriaUseCase: GuardarCategoriaUseCase,
+    private val eliminarCategoriaUseCase: EliminarCategoriaUseCase,
     private val obtenerJugadoresPorCategoriaUseCase: ObtenerJugadoresPorCategoriaUseCase,
     private val obtenerJugadoresSinCategoriaUseCase: ObtenerJugadoresSinCategoriaUseCase,
     private val asignarJugadoresACategoriaUseCase: AsignarJugadoresACategoriaUseCase,
@@ -36,8 +38,17 @@ class CategoriaDetalleViewModel @Inject constructor(
             is CategoriaDetalleEvent.OnNombreCategoriaChanged -> {
                 _uiState.update { it.copy(nombreCategoria = event.nombre, nombreError = null) }
             }
-
             is CategoriaDetalleEvent.OnGuardarNombreCategoria -> guardarNombreCategoria()
+            is CategoriaDetalleEvent.OnShowSaveSuccessDialogChanged -> {
+                _uiState.update { it.copy(showSaveSuccessDialog = event.show) }
+            }
+            is CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged -> {
+                _uiState.update { it.copy(showDeleteConfirmDialog = event.show) }
+            }
+            is CategoriaDetalleEvent.OnEliminarCategoria -> eliminarCategoria()
+            is CategoriaDetalleEvent.OnShowDeleteSuccessDialogChanged -> {
+                _uiState.update { it.copy(showDeleteSuccessDialog = event.show) }
+            }
             is CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged -> {
                 _uiState.update {
                     it.copy(
@@ -46,7 +57,6 @@ class CategoriaDetalleViewModel @Inject constructor(
                     )
                 }
             }
-
             is CategoriaDetalleEvent.OnJugadorSelectionToggled -> {
                 _uiState.update { state ->
                     val currentSet = state.selectedJugadoresIds.toMutableSet()
@@ -58,7 +68,6 @@ class CategoriaDetalleViewModel @Inject constructor(
                     state.copy(selectedJugadoresIds = currentSet)
                 }
             }
-
             is CategoriaDetalleEvent.OnAsignarJugadoresSeleccionados -> asignarJugadoresSeleccionados()
             is CategoriaDetalleEvent.OnRemoverJugador -> removerJugador(event.jugador)
         }
@@ -107,9 +116,28 @@ class CategoriaDetalleViewModel @Inject constructor(
             )
             val result = guardarCategoriaUseCase(categoria)
             result.onSuccess {
-                _uiState.update { it.copy(isSavingNombre = false, errorMessage = null) }
+                _uiState.update {
+                    it.copy(
+                        isSavingNombre = false,
+                        showSaveSuccessDialog = true,
+                        errorMessage = null
+                    )
+                }
             }.onFailure { error ->
                 _uiState.update { it.copy(isSavingNombre = false, errorMessage = error.message) }
+            }
+        }
+    }
+
+    private fun eliminarCategoria() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDeleting = true, showDeleteConfirmDialog = false) }
+            eliminarCategoriaUseCase(uiState.value.categoriaId)
+            _uiState.update {
+                it.copy(
+                    isDeleting = false,
+                    showDeleteSuccessDialog = true
+                )
             }
         }
     }
@@ -118,8 +146,7 @@ class CategoriaDetalleViewModel @Inject constructor(
         val selectedIds = uiState.value.selectedJugadoresIds
         if (selectedIds.isEmpty()) return
 
-        val jugadoresAAsignar =
-            uiState.value.jugadoresSinCategoria.filter { selectedIds.contains(it.jugadorId) }
+        val jugadoresAAsignar = uiState.value.jugadoresSinCategoria.filter { selectedIds.contains(it.jugadorId) }
         val categoriaId = uiState.value.categoriaId
         val categoriaNombre = uiState.value.nombreCategoria
 
