@@ -18,7 +18,7 @@ hiltNavigationCompose = "1.2.0"
 ksp = "2.2.10-2.0.2"
 coil = "2.7.0"
 material-icons = "1.7.5"
-
+kizitonwose-calendar = "2.5.0"
 coreTesting = "2.2.0"
 hiltAndroidTestingVersion = "2.56.2"
 kotlinxCoroutinesAndroid = "1.7.3"
@@ -93,6 +93,8 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+
+kizitonwose-calendar-compose = { group = "com.kizitonwose.calendar", name = "compose", version.ref = "kizitonwose-calendar" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
