@@ -18,4 +18,10 @@ class CategoriaRepositoryImpl @Inject constructor(private val categoriaDao: Cate
         categoriaDao.guardarCategoria(categoria.toEntity())
         return categoria.id ?: 0
     }
+
+    override fun obtenerCategoriaPorId(id: Long): Flow<Categoria?> {
+        return categoriaDao.obtenerCategoriaConConteoPorId(id).map { dto ->
+            dto?.toDomain()
+        }
+    }
 }
