@@ -30,4 +30,7 @@ interface CategoriaDao {
         GROUP BY c.id, c.nombre
     """)
     fun obtenerCategoriaConConteoPorId(id: Long): Flow<CategoriaConConteoDto?>
+
+    @Query("DELETE FROM categorias WHERE id = :id")
+    suspend fun eliminarCategoria(id: Long)
 }

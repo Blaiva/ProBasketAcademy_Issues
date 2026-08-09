@@ -24,4 +24,8 @@ class CategoriaRepositoryImpl @Inject constructor(private val categoriaDao: Cate
             dto?.toDomain()
         }
     }
+
+    override suspend fun eliminarCategoria(id: Long) {
+        categoriaDao.eliminarCategoria(id)
+    }
 }
