@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Categoria
 import com.probasketacademy.domain.model.Jugador
+import com.probasketacademy.domain.repository.CategoriaRepository
 import com.probasketacademy.domain.repository.JugadorRepository
 import com.probasketacademy.domain.usecase.categoria.EliminarCategoriaUseCase
 import com.probasketacademy.domain.usecase.categoria.GuardarCategoriaUseCase
 import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriaPorIdUseCase
+import com.probasketacademy.domain.usecase.categoria.validarNombreCategoria
 import com.probasketacademy.domain.usecase.jugadores.AsignarJugadoresACategoriaUseCase
 import com.probasketacademy.domain.usecase.jugadores.ObtenerJugadoresPorCategoriaUseCase
 import com.probasketacademy.domain.usecase.jugadores.ObtenerJugadoresSinCategoriaUseCase
@@ -17,9 +19,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.map
 
 @HiltViewModel
 class CategoriaDetalleViewModel @Inject constructor(
+    private val categoriaRepository: CategoriaRepository,
     private val obtenerCategoriaPorIdUseCase: ObtenerCategoriaPorIdUseCase,
     private val guardarCategoriaUseCase: GuardarCategoriaUseCase,
     private val eliminarCategoriaUseCase: EliminarCategoriaUseCase,
@@ -79,11 +83,7 @@ class CategoriaDetalleViewModel @Inject constructor(
         viewModelScope.launch {
             obtenerCategoriaPorIdUseCase(categoriaId).collectLatest { cat ->
                 cat?.let { categoria ->
-                    _uiState.update { state ->
-                        if (state.nombreCategoria.isEmpty()) {
-                            state.copy(nombreCategoria = categoria.nombre)
-                        } else state
-                    }
+                    _uiState.update { it.copy(nombreCategoria = categoria.nombre) }
                 }
             }
         }
@@ -102,18 +102,23 @@ class CategoriaDetalleViewModel @Inject constructor(
     }
 
     private fun guardarNombreCategoria() {
-        val nombre = uiState.value.nombreCategoria.trim()
-        if (nombre.isBlank()) {
-            _uiState.update { it.copy(nombreError = "El nombre no puede estar vacío") }
-            return
-        }
-
         viewModelScope.launch {
+            val nombre = uiState.value.nombreCategoria
+            val nombresExistentes = categoriaRepository.obtenerCategoriasConConteo().first().map { it.nombre }
+
+            val nombreValidation = validarNombreCategoria(nombre, nombresExistentes)
+
+            if (!nombreValidation.isValid) {
+                _uiState.update { it.copy(nombreError = nombreValidation.error) }
+                return@launch
+            }
+
             _uiState.update { it.copy(isSavingNombre = true) }
             val categoria = Categoria(
                 id = uiState.value.categoriaId,
                 nombre = nombre
             )
+
             val result = guardarCategoriaUseCase(categoria)
             result.onSuccess {
                 _uiState.update {
@@ -124,7 +129,12 @@ class CategoriaDetalleViewModel @Inject constructor(
                     )
                 }
             }.onFailure { error ->
-                _uiState.update { it.copy(isSavingNombre = false, errorMessage = error.message) }
+                _uiState.update {
+                    it.copy(
+                        isSavingNombre = false,
+                        errorMessage = error.message
+                    )
+                }
             }
         }
     }
