@@ -6,4 +6,6 @@ import kotlinx.coroutines.flow.Flow
 interface CategoriaRepository {
     fun obtenerCategoriasConConteo(): Flow<List<Categoria>>
     suspend fun guardarCategoria(categoria: Categoria): Long
+    fun obtenerCategoriaPorId(id: Long): Flow<Categoria?>
+    suspend fun eliminarCategoria(id: Long)
 }

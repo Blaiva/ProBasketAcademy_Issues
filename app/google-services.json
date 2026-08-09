@@ -12,7 +12,20 @@
           "package_name": "com.probasketacademy"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1080793708305-eajjsnnu32getso5u5f522k8ephvbedj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.probasketacademy",
+            "certificate_hash": "d222290ca16d8157e1f0f91d6852b4171d6d4baf"
+          }
+        },
+        {
+          "client_id": "1080793708305-5q36dsqolq80geg56a65h7ddigck070b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD24P9Y0wUCOWgE5i6R8pXpf4KVOTM7oE8"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1080793708305-5q36dsqolq80geg56a65h7ddigck070b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

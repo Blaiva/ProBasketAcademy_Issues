@@ -39,7 +39,6 @@ import com.probasketacademy.presentacion.home.HomeScreen
 import com.probasketacademy.presentacion.jugadores.list.JugadoresListScreen
 import com.probasketacademy.presentacion.jugadores.edit.JugadorEditScreen
 import com.probasketacademy.presentacion.categorias.list.CategoriasListScreen
-import com.probasketacademy.presentacion.categorias.asignar.CategoriaAsignarScreen
 import com.probasketacademy.presentacion.categorias.detalle.CategoriaDetalleScreen
 import com.probasketacademy.presentacion.asistencias.AsistenciasScreen
 import com.probasketacademy.presentacion.eventos.EventosScreen
@@ -122,20 +121,9 @@ fun AppNavDisplay(
 
                 entry<Screen.Categorias> {
                     CategoriasListScreen(
-                        onNavigateToAsignarJugador = { categoriaId ->
-                            backStack.add(Screen.CategoriaAsignar(categoriaId))
-                        },
                         onNavigateToVerEditar = { categoriaId ->
                             backStack.add(Screen.CategoriaDetalle(categoriaId))
-                        },
-                        onAddCategoria = {
                         }
-                    )
-                }
-
-                entry<Screen.CategoriaAsignar> {
-                    CategoriaAsignarScreen(
-                        onNavigateBack = { if(backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) }
                     )
                 }
 

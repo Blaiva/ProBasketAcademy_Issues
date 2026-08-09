@@ -29,10 +29,6 @@ sealed class Screen: NavKey {
     @Serializable
     data class JugadorEdit(val jugadorId: Long) : Screen()
 
-    // --- NUEVAS RUTAS PARA CATEGORÍAS ---
-    @Serializable
-    data class CategoriaAsignar(val categoriaId: Long) : Screen()
-
     @Serializable
     data class CategoriaDetalle(val categoriaId: Long) : Screen()
 }

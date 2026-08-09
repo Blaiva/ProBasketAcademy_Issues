@@ -20,4 +20,17 @@ interface CategoriaDao {
         GROUP BY c.id
     """)
     fun obtenerCategoriasConConteo(): Flow<List<CategoriaConConteoDto>>
+
+
+    @Query("""
+        SELECT c.id, c.nombre, COUNT(j.jugadorId) AS totalJugadores 
+        FROM categorias c 
+        LEFT JOIN jugadores j ON c.id = j.categoriaId 
+        WHERE c.id = :id
+        GROUP BY c.id, c.nombre
+    """)
+    fun obtenerCategoriaConConteoPorId(id: Long): Flow<CategoriaConConteoDto?>
+
+    @Query("DELETE FROM categorias WHERE id = :id")
+    suspend fun eliminarCategoria(id: Long)
 }
