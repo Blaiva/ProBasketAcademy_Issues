@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.repository.JugadorRepository
+import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriasConConteoUseCase
 import com.probasketacademy.domain.usecase.jugadores.EliminarJugadorUseCase
 import com.probasketacademy.domain.usecase.jugadores.GuardarJugadorUseCase
 import com.probasketacademy.domain.usecase.jugadores.ObtenerJugadorPorIdUseCase
@@ -30,11 +31,16 @@ import javax.inject.Inject
 class JugadorEditViewModel @Inject constructor(
     private val obtenerJugadorPorIdUseCase: ObtenerJugadorPorIdUseCase,
     private val guardarJugadorUseCase: GuardarJugadorUseCase,
-    private val eliminarJugadorUseCase: EliminarJugadorUseCase
+    private val eliminarJugadorUseCase: EliminarJugadorUseCase,
+    private val obtenerCategoriasConConteoUseCase: ObtenerCategoriasConConteoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(JugadorEditState())
     val uiState: StateFlow<JugadorEditState> = _uiState.asStateFlow()
+
+    init {
+        cargarCategorias()
+    }
 
     fun onEvent(event: JugadorEditEvent) {
         when (event) {
@@ -42,7 +48,7 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnTelefonoChanged -> _uiState.update { it.copy(telefono = event.value, telefonoError = null) }
             is JugadorEditEvent.OnEdadChanged -> _uiState.update { it.copy(edad = event.value, edadError = null) }
             is JugadorEditEvent.OnDomicilioChanged -> _uiState.update { it.copy(domicilio = event.value, domicilioError = null) }
-            is JugadorEditEvent.OnCategoriaNombreChanged -> _uiState.update { it.copy(categoriaNombre = event.value) }
+            is JugadorEditEvent.OnCategoriaSelected -> _uiState.update { it.copy(categoriaId = event.id, categoriaNombre = event.nombre) }
             is JugadorEditEvent.OnTallaCamisetaChanged -> _uiState.update { it.copy(tallaCamiseta = event.value, tallaCamisetaError = null) }
             is JugadorEditEvent.OnNumeroCamisetaChanged -> _uiState.update { it.copy(numeroCamiseta = event.value, numeroCamisetaError = null) }
             is JugadorEditEvent.OnEstaturaChanged -> _uiState.update { it.copy(estatura = event.value, estaturaError = null) }
@@ -51,10 +57,18 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnTutorTelefonoChanged -> _uiState.update { it.copy(tutorTelefono = event.value, tutorTelefonoError = null) }
             is JugadorEditEvent.OnTutorVinculoChanged -> _uiState.update { it.copy(tutorVinculo = event.value, tutorVinculoError = null) }
             is JugadorEditEvent.OnTutorCorreoChanged -> _uiState.update { it.copy(tutorCorreo = event.value, tutorCorreoError = null) }
-            is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value, estadoError = null) }
+            is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value) }
             is JugadorEditEvent.OnDocCompletaChanged -> _uiState.update { it.copy(docCompleta = event.value) }
             is JugadorEditEvent.OnGuardarClicked -> onGuardar()
             is JugadorEditEvent.OnEliminarClicked -> onEliminar()
+        }
+    }
+
+    private fun cargarCategorias() {
+        viewModelScope.launch {
+            obtenerCategoriasConConteoUseCase().collectLatest { lista ->
+                _uiState.update { it.copy(categorias = lista) }
+            }
         }
     }
 
@@ -102,7 +116,6 @@ class JugadorEditViewModel @Inject constructor(
     private fun onGuardar() {
         val currentState = _uiState.value
 
-        // Executar las validaciones individualmente para mostrar errores en UI
         val nombreVal = validarNombreJugador(currentState.nombre)
         val telefonoVal = validarTelefonoJugador(currentState.telefono)
         val edadVal = validarEdadJugador(currentState.edad)
@@ -115,13 +128,11 @@ class JugadorEditViewModel @Inject constructor(
         val tutorTelefonoVal = validarTutorTelefonoJugador(currentState.tutorTelefono)
         val tutorVinculoVal = validarTutorVinculoJugador(currentState.tutorVinculo)
         val tutorCorreoVal = validarTutorCorreoJugador(currentState.tutorCorreo)
-        val estadoVal = validarEstadoJugador(currentState.estado)
 
         if (!nombreVal.isValid || !telefonoVal.isValid || !edadVal.isValid ||
             !domicilioVal.isValid || !tallaVal.isValid || !numeroVal.isValid ||
             !estaturaVal.isValid || !pesoVal.isValid || !tutorNombreVal.isValid ||
-            !tutorTelefonoVal.isValid || !tutorVinculoVal.isValid ||
-            !tutorCorreoVal.isValid || !estadoVal.isValid
+            !tutorTelefonoVal.isValid || !tutorVinculoVal.isValid || !tutorCorreoVal.isValid
         ) {
             _uiState.update {
                 it.copy(
@@ -136,8 +147,7 @@ class JugadorEditViewModel @Inject constructor(
                     tutorNombreError = tutorNombreVal.error,
                     tutorTelefonoError = tutorTelefonoVal.error,
                     tutorVinculoError = tutorVinculoVal.error,
-                    tutorCorreoError = tutorCorreoVal.error,
-                    estadoError = estadoVal.error
+                    tutorCorreoError = tutorCorreoVal.error
                 )
             }
             return

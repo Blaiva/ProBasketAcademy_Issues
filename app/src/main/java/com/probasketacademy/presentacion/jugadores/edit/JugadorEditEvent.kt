@@ -5,7 +5,7 @@ sealed interface JugadorEditEvent {
     data class OnTelefonoChanged(val value: String) : JugadorEditEvent
     data class OnEdadChanged(val value: String) : JugadorEditEvent
     data class OnDomicilioChanged(val value: String) : JugadorEditEvent
-    data class OnCategoriaNombreChanged(val value: String) : JugadorEditEvent
+    data class OnCategoriaSelected(val id: Long, val nombre: String) : JugadorEditEvent
     data class OnTallaCamisetaChanged(val value: String) : JugadorEditEvent
     data class OnNumeroCamisetaChanged(val value: String) : JugadorEditEvent
     data class OnEstaturaChanged(val value: String) : JugadorEditEvent
