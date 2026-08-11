@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
@@ -34,42 +35,36 @@ fun JugadorEditScreen(
     viewModel: JugadorEditViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val jugador = state.jugador
+
+    // Opciones locales estáticas para Tallas y Vínculos
+    val opcionesTallas = listOf("XXS", "XS", "S", "M", "L", "XL", "XXL")
+    val opcionesVinculos = listOf("Padre", "Madre", "Tutor Legal", "Tío/a", "Abuelo/a", "Hermano/a Mayor")
+
+    // Estados de expansión para cada Dropdown menú
+    var categoriaExpanded by remember { mutableStateOf(false) }
+    var tallaExpanded by remember { mutableStateOf(false) }
+    var vinculoExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(jugadorId) {
         viewModel.cargarJugador(jugadorId)
     }
 
-    LaunchedEffect(state.isSaved) {
-        if (state.isSaved) {
+    LaunchedEffect(state.isSaved, state.isDeleted) {
+        if (state.isSaved || state.isDeleted) {
             onNavigateBack()
         }
     }
 
-    // --- SISTEMA DE MODOS ---
-    // Si el ID es 0, forzamos el modo edición para que salgan las barras al crear.
-    var isEditing by remember(jugador) {
-        mutableStateOf(jugador?.jugadorId == 0L)
+    var isEditing by remember(state.isNew) {
+        mutableStateOf(state.isNew)
     }
-
-    // --- VARIABLES DE LAS BARRAS DE TEXTO ---
-    var nombre by remember(jugador) { mutableStateOf(jugador?.nombre ?: "") }
-    var numero by remember(jugador) { mutableStateOf(jugador?.numeroCamiseta?.toString() ?: "") }
-    var talla by remember(jugador) { mutableStateOf(jugador?.tallaCamiseta ?: "") }
-    var categoria by remember(jugador) { mutableStateOf(jugador?.categoriaNombre ?: "") }
-    var estatura by remember(jugador) { mutableStateOf(jugador?.estatura?.toString() ?: "") }
-    var peso by remember(jugador) { mutableStateOf(jugador?.peso?.toString() ?: "") }
-    var edad by remember(jugador) { mutableStateOf(jugador?.edad?.toString() ?: "") }
-    var telefono by remember(jugador) { mutableStateOf(jugador?.telefono ?: "") }
-    var estado by remember(jugador) { mutableStateOf(jugador?.estado ?: "Activo") }
-    var docCompleta by remember(jugador) { mutableStateOf(jugador?.docCompleta ?: false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = if (isEditing) { if (jugador?.jugadorId == 0L) "Nuevo Jugador" else "Editar Jugador" } else "Ficha del Jugador",
+                        text = if (isEditing) { if (state.isNew) "Nuevo Jugador" else "Editar Jugador" } else "Ficha del Jugador",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = Color.White
@@ -81,8 +76,7 @@ fun JugadorEditScreen(
                     }
                 },
                 actions = {
-                    // Botón para cambiar a modo edición si estamos en modo lectura
-                    if (!isEditing && jugador?.jugadorId != 0L) {
+                    if (!isEditing && !state.isNew) {
                         IconButton(onClick = { isEditing = true }) {
                             Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color.White)
                         }
@@ -93,16 +87,12 @@ fun JugadorEditScreen(
         },
         containerColor = LightBackground
     ) { padding ->
-        if (state.isLoading && jugador == null) {
+        if (state.isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = HeaderOrange)
             }
-        } else if (jugador != null) {
-
+        } else {
             if (isEditing) {
-                // ==========================================
-                // 1. MODO EDICIÓN / CREACIÓN (BARRAS DE TEXTO)
-                // ==========================================
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -114,29 +104,45 @@ fun JugadorEditScreen(
                     Text("Información Personal", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 
                     OutlinedTextField(
-                        value = nombre,
-                        onValueChange = { nombre = it },
+                        value = state.nombre,
+                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnNombreChanged(it)) },
                         label = { Text("Nombre Completo") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = state.nombreError != null,
+                        supportingText = state.nombreError?.let { { Text(it) } }
+                    )
+
+                    OutlinedTextField(
+                        value = state.domicilio,
+                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnDomicilioChanged(it)) },
+                        label = { Text("Domicilio") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        isError = state.domicilioError != null,
+                        supportingText = state.domicilioError?.let { { Text(it) } }
                     )
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
-                            value = edad,
-                            onValueChange = { edad = it },
+                            value = state.edad,
+                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnEdadChanged(it)) },
                             label = { Text("Edad") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = state.edadError != null,
+                            supportingText = state.edadError?.let { { Text(it) } }
                         )
                         OutlinedTextField(
-                            value = telefono,
-                            onValueChange = { telefono = it },
+                            value = state.telefono,
+                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTelefonoChanged(it)) },
                             label = { Text("Teléfono") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = state.telefonoError != null,
+                            supportingText = state.telefonoError?.let { { Text(it) } }
                         )
                     }
 
@@ -144,48 +150,184 @@ fun JugadorEditScreen(
                     Text("Datos Deportivos", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        // Dropdown Select para Categoría
+                        ExposedDropdownMenuBox(
+                            expanded = categoriaExpanded,
+                            onExpandedChange = { categoriaExpanded = !categoriaExpanded },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = state.categoriaNombre,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Categoría") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoriaExpanded) },
+                                modifier = Modifier.menuAnchor(),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = categoriaExpanded,
+                                onDismissRequest = { categoriaExpanded = false }
+                            ) {
+                                if (state.categorias.isEmpty()) {
+                                    DropdownMenuItem(text = { Text("No hay categorías") }, onClick = {}, enabled = false)
+                                } else {
+                                    DropdownMenuItem(
+                                        text = { Text("Ninguna (Sin Categoría)", color = MaterialTheme.colorScheme.secondary) },
+                                        onClick = {
+                                            viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(0L, "Sin Categoría"))
+                                            categoriaExpanded = false
+                                        }
+                                    )
+
+                                    state.categorias.forEach { cat ->
+                                        DropdownMenuItem(
+                                            text = { Text(cat.nombre) },
+                                            onClick = {
+                                                viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(cat.id, cat.nombre))
+                                                categoriaExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         OutlinedTextField(
-                            value = categoria,
-                            onValueChange = { categoria = it },
-                            label = { Text("Categoría") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        OutlinedTextField(
-                            value = numero,
-                            onValueChange = { numero = it },
+                            value = state.numeroCamiseta,
+                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnNumeroCamisetaChanged(it)) },
                             label = { Text("No. Camiseta") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = state.numeroCamisetaError != null,
+                            supportingText = state.numeroCamisetaError?.let { { Text(it) } }
                         )
                     }
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
-                            value = estatura,
-                            onValueChange = { estatura = it },
+                            value = state.estatura,
+                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnEstaturaChanged(it)) },
                             label = { Text("Estatura (m)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = state.estaturaError != null,
+                            supportingText = state.estaturaError?.let { { Text(it) } }
                         )
                         OutlinedTextField(
-                            value = peso,
-                            onValueChange = { peso = it },
+                            value = state.peso,
+                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnPesoChanged(it)) },
                             label = { Text("Peso (kg)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            isError = state.pesoError != null,
+                            supportingText = state.pesoError?.let { { Text(it) } }
                         )
                     }
 
+                    // Dropdown Select para Talla de Camiseta
+                    ExposedDropdownMenuBox(
+                        expanded = tallaExpanded,
+                        onExpandedChange = { tallaExpanded = !tallaExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = state.tallaCamiseta,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Talla de Camiseta") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = tallaExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            shape = RoundedCornerShape(12.dp),
+                            isError = state.tallaCamisetaError != null,
+                            supportingText = state.tallaCamisetaError?.let { { Text(it) } }
+                        )
+                        ExposedDropdownMenu(
+                            expanded = tallaExpanded,
+                            onDismissRequest = { tallaExpanded = false }
+                        ) {
+                            opcionesTallas.forEach { talla ->
+                                DropdownMenuItem(
+                                    text = { Text(talla) },
+                                    onClick = {
+                                        viewModel.onEvent(JugadorEditEvent.OnTallaCamisetaChanged(talla))
+                                        tallaExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Información del Tutor", fontWeight = FontWeight.Bold, color = PrimaryOrange)
+
                     OutlinedTextField(
-                        value = talla,
-                        onValueChange = { talla = it },
-                        label = { Text("Talla de Camiseta") },
+                        value = state.tutorNombre,
+                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorNombreChanged(it)) },
+                        label = { Text("Nombre del Tutor") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = state.tutorNombreError != null,
+                        supportingText = state.tutorNombreError?.let { { Text(it) } }
+                    )
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(
+                            value = state.tutorTelefono,
+                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorTelefonoChanged(it)) },
+                            label = { Text("Teléfono Tutor") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            isError = state.tutorTelefonoError != null,
+                            supportingText = state.tutorTelefonoError?.let { { Text(it) } }
+                        )
+
+                        // Dropdown Select para Vínculo del Tutor
+                        ExposedDropdownMenuBox(
+                            expanded = vinculoExpanded,
+                            onExpandedChange = { vinculoExpanded = !vinculoExpanded },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = state.tutorVinculo,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Vínculo") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = vinculoExpanded) },
+                                modifier = Modifier.menuAnchor(),
+                                shape = RoundedCornerShape(12.dp),
+                                isError = state.tutorVinculoError != null,
+                                supportingText = state.tutorVinculoError?.let { { Text(it) } }
+                            )
+                            ExposedDropdownMenu(
+                                expanded = vinculoExpanded,
+                                onDismissRequest = { vinculoExpanded = false }
+                            ) {
+                                opcionesVinculos.forEach { vinculo ->
+                                    DropdownMenuItem(
+                                        text = { Text(vinculo) },
+                                        onClick = {
+                                            viewModel.onEvent(JugadorEditEvent.OnTutorVinculoChanged(vinculo))
+                                            vinculoExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = state.tutorCorreo,
+                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorCorreoChanged(it)) },
+                        label = { Text("Correo del Tutor") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        isError = state.tutorCorreoError != null,
+                        supportingText = state.tutorCorreoError?.let { { Text(it) } }
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -203,8 +345,10 @@ fun JugadorEditScreen(
                             ) {
                                 Text("Jugador Activo", color = TextDark, fontWeight = FontWeight.Medium)
                                 Switch(
-                                    checked = estado.equals("Activo", ignoreCase = true),
-                                    onCheckedChange = { isChecked -> estado = if (isChecked) "Activo" else "Inactivo" },
+                                    checked = state.estado.equals("Activo", ignoreCase = true),
+                                    onCheckedChange = { isChecked ->
+                                        viewModel.onEvent(JugadorEditEvent.OnEstadoChanged(if (isChecked) "Activo" else "Inactivo"))
+                                    },
                                     colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
                                 )
                             }
@@ -216,8 +360,8 @@ fun JugadorEditScreen(
                             ) {
                                 Text("Documentación Completa", color = TextDark, fontWeight = FontWeight.Medium)
                                 Switch(
-                                    checked = docCompleta,
-                                    onCheckedChange = { docCompleta = it },
+                                    checked = state.docCompleta,
+                                    onCheckedChange = { viewModel.onEvent(JugadorEditEvent.OnDocCompletaChanged(it)) },
                                     colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
                                 )
                             }
@@ -226,27 +370,46 @@ fun JugadorEditScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Button(
-                        onClick = {
-                            // NOTA: Aquí debes asegurarte de enviar estas variables locales a tu ViewModel.
-                            // Si tu evento OnGuardarClicked necesita parámetros, pásaselos aquí.
-                            viewModel.onEvent(JugadorEditEvent.OnGuardarClicked)
-                        },
-                        enabled = !state.isLoading,
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Save, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Guardar Jugador", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                        Button(
+                            onClick = { viewModel.onEvent(JugadorEditEvent.OnGuardarClicked) },
+                            enabled = !state.isSaving && !state.isDeleting,
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+                        ) {
+                            if (state.isSaving) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Default.Save, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Guardar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                            }
+                        }
+
+                        if (!state.isNew) {
+                            Button(
+                                onClick = { viewModel.onEvent(JugadorEditEvent.OnEliminarClicked) },
+                                enabled = !state.isSaving && !state.isDeleting,
+                                modifier = Modifier.weight(1f).height(56.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            ) {
+                                if (state.isDeleting) {
+                                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Eliminar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                                }
+                            }
                         }
                     }
 
-                    if (jugador.jugadorId != 0L) {
+                    if (!state.isNew) {
                         OutlinedButton(
                             onClick = { isEditing = false },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -257,9 +420,6 @@ fun JugadorEditScreen(
                     }
                 }
             } else {
-                // ==========================================
-                // 2. MODO LECTURA (VISTA DE FOTO ORIGINAL)
-                // ==========================================
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -276,7 +436,7 @@ fun JugadorEditScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = jugador.nombre.take(1).uppercase(),
+                                text = if (state.nombre.isNotEmpty()) state.nombre.take(1).uppercase() else "?",
                                 fontSize = 40.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextMuted
@@ -292,7 +452,7 @@ fun JugadorEditScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "#${jugador.numeroCamiseta}",
+                                text = "#${state.numeroCamiseta}",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
@@ -302,9 +462,9 @@ fun JugadorEditScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Text(text = jugador.nombre, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+                    Text(text = state.nombre, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
                     Text(
-                        text = "Talla: ${jugador.tallaCamiseta.ifEmpty { "No asignada" }}",
+                        text = "Talla: ${state.tallaCamiseta.ifEmpty { "No asignada" }}",
                         fontSize = 14.sp,
                         color = TextMuted
                     )
@@ -312,10 +472,10 @@ fun JugadorEditScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val isActive = jugador.estado.equals("Activo", ignoreCase = true)
+                        val isActive = state.estado.equals("Activo", ignoreCase = true)
                         AssistChip(
                             onClick = { },
-                            label = { Text(jugador.estado, color = if (isActive) ActiveBadgeText else TextMuted, fontWeight = FontWeight.Bold) },
+                            label = { Text(state.estado, color = if (isActive) ActiveBadgeText else TextMuted, fontWeight = FontWeight.Bold) },
                             leadingIcon = {
                                 Box(modifier = Modifier.size(8.dp).background(if (isActive) ActiveBadgeText else TextMuted, CircleShape))
                             },
@@ -324,9 +484,9 @@ fun JugadorEditScreen(
                         )
                         AssistChip(
                             onClick = { },
-                            label = { Text(if (jugador.docCompleta) "Doc. Completa" else "Doc. Pendiente", color = TextDark) },
+                            label = { Text(if (state.docCompleta) "Doc. Completa" else "Doc. Pendiente", color = TextDark) },
                             leadingIcon = {
-                                if (jugador.docCompleta) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(16.dp))
+                                if (state.docCompleta) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(16.dp))
                             }
                         )
                     }
@@ -335,12 +495,12 @@ fun JugadorEditScreen(
 
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoCard(modifier = Modifier.weight(1f), title = "CATEGORÍA", value = jugador.categoriaNombre, subtitle = "Asignada")
-                            InfoCard(modifier = Modifier.weight(1f), title = "FÍSICO", value = "${jugador.estatura} m", subtitle = "${jugador.peso} kg")
+                            InfoCard(modifier = Modifier.weight(1f), title = "CATEGORÍA", value = state.categoriaNombre, subtitle = "Asignada")
+                            InfoCard(modifier = Modifier.weight(1f), title = "FÍSICO", value = "${state.estatura} m", subtitle = "${state.peso} kg")
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoCard(modifier = Modifier.weight(1f), title = "EDAD", value = "${jugador.edad} años", subtitle = "Registrada")
-                            InfoCard(modifier = Modifier.weight(1f), title = "CONTACTO", value = jugador.telefono.ifEmpty { "N/A" }, subtitle = "Principal")
+                            InfoCard(modifier = Modifier.weight(1f), title = "EDAD", value = "${state.edad} años", subtitle = "Registrada")
+                            InfoCard(modifier = Modifier.weight(1f), title = "CONTACTO", value = state.telefono.ifEmpty { "N/A" }, subtitle = "Principal")
                         }
                     }
                 }
