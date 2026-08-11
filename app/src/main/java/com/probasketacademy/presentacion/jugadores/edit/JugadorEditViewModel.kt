@@ -59,6 +59,7 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnTutorCorreoChanged -> _uiState.update { it.copy(tutorCorreo = event.value, tutorCorreoError = null) }
             is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value) }
             is JugadorEditEvent.OnDocCompletaChanged -> _uiState.update { it.copy(docCompleta = event.value) }
+            is JugadorEditEvent.OnFotoChanged -> _uiState.update { it.copy(fotoUri = event.uri) }
             is JugadorEditEvent.OnGuardarClicked -> onGuardar()
             is JugadorEditEvent.OnEliminarClicked -> onEliminar()
         }

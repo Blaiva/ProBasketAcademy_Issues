@@ -16,6 +16,7 @@ sealed interface JugadorEditEvent {
     data class OnTutorCorreoChanged(val value: String) : JugadorEditEvent
     data class OnEstadoChanged(val value: String) : JugadorEditEvent
     data class OnDocCompletaChanged(val value: Boolean) : JugadorEditEvent
+    data class OnFotoChanged(val uri: String?) : JugadorEditEvent
     data object OnGuardarClicked : JugadorEditEvent
     data object OnEliminarClicked : JugadorEditEvent
 }
