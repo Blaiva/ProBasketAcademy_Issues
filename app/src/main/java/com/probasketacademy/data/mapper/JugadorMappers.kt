@@ -30,7 +30,7 @@ fun Jugador.toEntity(): JugadorEntity = JugadorEntity(
     telefono = telefono,
     edad = edad,
     domicilio = domicilio,
-    categoriaId = categoriaId,
+    categoriaId = if (this.categoriaId == 0L) null else this.categoriaId,
     tallaCamiseta = tallaCamiseta,
     numeroCamiseta = numeroCamiseta,
     estatura = estatura,
@@ -62,5 +62,5 @@ fun JugadorConCategoriaDto.toDomain(): Jugador = Jugador(
     estado = estado,
     docCompleta = docCompleta,
     fotoUri = fotoUri,
-    categoriaNombre = categoriaNombre
+    categoriaNombre = categoriaNombre ?: "Sin Categoría"
 )

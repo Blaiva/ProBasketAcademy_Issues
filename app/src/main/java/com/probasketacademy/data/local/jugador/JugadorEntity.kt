@@ -26,7 +26,7 @@ data class JugadorEntity(
     val edad: Int,
     val domicilio: String,
 
-    val categoriaId: Long,
+    val categoriaId: Long?,
     val tallaCamiseta: String,
     val numeroCamiseta: Int = 0,
     val estatura: Double,
