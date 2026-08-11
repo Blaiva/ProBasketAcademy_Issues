@@ -121,3 +121,4 @@ dependencies {
 
     implementation(libs.kizitonwose.calendar.compose)
 }
+
