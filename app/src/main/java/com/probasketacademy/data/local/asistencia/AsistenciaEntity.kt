@@ -29,7 +29,7 @@ data class AsistenciaEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val jugadorId: Long,
-    val categoriaId: Long,
+    val categoriaId: Long?,
     val fechaEpocaMs: Long,
     val asistio: Boolean
 )
