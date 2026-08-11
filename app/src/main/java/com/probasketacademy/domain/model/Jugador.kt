@@ -6,7 +6,7 @@ data class Jugador(
     val telefono: String = "",
     val edad: Int = 0,
     val domicilio: String = "",
-    val categoriaId: Long = 0,
+    val categoriaId: Long? = null,
     val tallaCamiseta: String = "",
     val numeroCamiseta: Int = 0,
     val estatura: Double = 0.0,

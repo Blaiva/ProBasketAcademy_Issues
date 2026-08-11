@@ -6,7 +6,7 @@ data class JugadorConCategoriaDto(
     val telefono: String,
     val edad: Int,
     val domicilio: String,
-    val categoriaId: Long,
+    val categoriaId: Long?,
     val tallaCamiseta: String,
     val numeroCamiseta: Int,
     val estatura: Double,
@@ -19,5 +19,5 @@ data class JugadorConCategoriaDto(
     val docCompleta: Boolean,
     val fotoUri: String?,
 
-    val categoriaNombre: String
+    val categoriaNombre: String?
 )

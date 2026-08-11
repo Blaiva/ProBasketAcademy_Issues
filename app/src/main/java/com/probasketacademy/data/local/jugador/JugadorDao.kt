@@ -12,18 +12,17 @@ interface JugadorDao {
     suspend fun guardarJugador(jugador: JugadorEntity)
 
     @Query("""
-        SELECT j.*, c.nombre AS categoriaNombre
-        FROM jugadores j
-        INNER JOIN categorias c ON j.categoriaId = c.id
+        SELECT j.*, COALESCE(c.nombre, 'Sin Categoría') AS categoriaNombre 
+        FROM jugadores j 
+        LEFT JOIN categorias c ON j.categoriaId = c.id 
         WHERE j.jugadorId = :id
     """)
     fun obtenerJugadorConCategoriaPorId(id: Long): Flow<JugadorConCategoriaDto?>
 
     @Query("""
-        SELECT j.*, c.nombre AS categoriaNombre
-        FROM jugadores j
-        INNER JOIN categorias c ON j.categoriaId = c.id
-        ORDER BY j.nombre ASC
+        SELECT j.*, COALESCE(c.nombre, 'Sin Categoría') AS categoriaNombre 
+        FROM jugadores j 
+        LEFT JOIN categorias c ON j.categoriaId = c.id
     """)
     fun obtenerJugadoresConCategoria(): Flow<List<JugadorConCategoriaDto>>
 
