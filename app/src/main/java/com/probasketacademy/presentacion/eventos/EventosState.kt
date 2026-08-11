@@ -5,10 +5,10 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 data class EventosState(
-    val isLoading: Boolean = false,
+    val eventosDelDia: List<Evento> = emptyList(),
     val selectedDate: LocalDate = LocalDate.now(),
     val currentYearMonth: YearMonth = YearMonth.now(),
-    val eventosDelDia: List<Evento> = emptyList(),
-    val showAddDialog: Boolean = false,
-    val errorMessage: String? = null
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val showAddDialog: Boolean = false
 )
