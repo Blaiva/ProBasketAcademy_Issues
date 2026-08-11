@@ -121,4 +121,6 @@ dependencies {
 
     implementation(libs.coil3.coil.compose)
     implementation(libs.coil3.coil.network.okhttp)
+
+    implementation(libs.kizitonwose.calendar.compose)
 }
