@@ -1,7 +1,12 @@
 package com.probasketacademy.presentacion.jugadores.edit
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -20,11 +26,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.probasketacademy.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,15 +46,30 @@ fun JugadorEditScreen(
     viewModel: JugadorEditViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    // Opciones locales estáticas para Tallas y Vínculos
     val opcionesTallas = listOf("XXS", "XS", "S", "M", "L", "XL", "XXL")
     val opcionesVinculos = listOf("Padre", "Madre", "Tutor Legal", "Tío/a", "Abuelo/a", "Hermano/a Mayor")
 
-    // Estados de expansión para cada Dropdown menú
     var categoriaExpanded by remember { mutableStateOf(false) }
     var tallaExpanded by remember { mutableStateOf(false) }
     var vinculoExpanded by remember { mutableStateOf(false) }
+
+    // Selector de imágenes de la galería
+    val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            try {
+                // Mantiene el permiso de lectura de la imagen incluso si se cierra la app
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            viewModel.onEvent(JugadorEditEvent.OnFotoChanged(uri.toString()))
+        }
+    }
 
     LaunchedEffect(jugadorId) {
         viewModel.cargarJugador(jugadorId)
@@ -101,6 +127,48 @@ fun JugadorEditScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+
+                    // --- SECCIÓN FOTO MODO EDICIÓN ---
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape)
+                                .background(BorderColor)
+                                .clickable {
+                                    pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (!state.fotoUri.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(state.fotoUri)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Foto seleccionada",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        imageVector = Icons.Default.AddAPhoto,
+                                        contentDescription = "Añadir foto",
+                                        tint = TextMuted,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Añadir Foto", color = TextMuted, fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
+                    // ---------------------------------
+
                     Text("Información Personal", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 
                     OutlinedTextField(
@@ -150,7 +218,6 @@ fun JugadorEditScreen(
                     Text("Datos Deportivos", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // Dropdown Select para Categoría
                         ExposedDropdownMenuBox(
                             expanded = categoriaExpanded,
                             onExpandedChange = { categoriaExpanded = !categoriaExpanded },
@@ -169,26 +236,21 @@ fun JugadorEditScreen(
                                 expanded = categoriaExpanded,
                                 onDismissRequest = { categoriaExpanded = false }
                             ) {
-                                if (state.categorias.isEmpty()) {
-                                    DropdownMenuItem(text = { Text("No hay categorías") }, onClick = {}, enabled = false)
-                                } else {
+                                DropdownMenuItem(
+                                    text = { Text("Ninguna (Sin Categoría)", color = MaterialTheme.colorScheme.secondary) },
+                                    onClick = {
+                                        viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(0L, "Sin Categoría"))
+                                        categoriaExpanded = false
+                                    }
+                                )
+                                state.categorias.forEach { cat ->
                                     DropdownMenuItem(
-                                        text = { Text("Ninguna (Sin Categoría)", color = MaterialTheme.colorScheme.secondary) },
+                                        text = { Text(cat.nombre) },
                                         onClick = {
-                                            viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(0L, "Sin Categoría"))
+                                            viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(cat.id, cat.nombre))
                                             categoriaExpanded = false
                                         }
                                     )
-
-                                    state.categorias.forEach { cat ->
-                                        DropdownMenuItem(
-                                            text = { Text(cat.nombre) },
-                                            onClick = {
-                                                viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(cat.id, cat.nombre))
-                                                categoriaExpanded = false
-                                            }
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -228,7 +290,6 @@ fun JugadorEditScreen(
                         )
                     }
 
-                    // Dropdown Select para Talla de Camiseta
                     ExposedDropdownMenuBox(
                         expanded = tallaExpanded,
                         onExpandedChange = { tallaExpanded = !tallaExpanded }
@@ -285,7 +346,6 @@ fun JugadorEditScreen(
                             supportingText = state.tutorTelefonoError?.let { { Text(it) } }
                         )
 
-                        // Dropdown Select para Vínculo del Tutor
                         ExposedDropdownMenuBox(
                             expanded = vinculoExpanded,
                             onExpandedChange = { vinculoExpanded = !vinculoExpanded },
@@ -427,25 +487,39 @@ fun JugadorEditScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
+                    // --- SECCIÓN FOTO MODO LECTURA (FICHA) ---
                     Box(modifier = Modifier.padding(top = 16.dp)) {
                         Box(
                             modifier = Modifier
-                                .size(100.dp)
+                                .size(110.dp)
                                 .clip(CircleShape)
                                 .background(BorderColor),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = if (state.nombre.isNotEmpty()) state.nombre.take(1).uppercase() else "?",
-                                fontSize = 40.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextMuted
-                            )
+                            if (!state.fotoUri.isNullOrEmpty()) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(state.fotoUri)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = "Foto de perfil",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(
+                                    text = if (state.nombre.isNotEmpty()) state.nombre.take(1).uppercase() else "?",
+                                    fontSize = 40.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextMuted
+                                )
+                            }
                         }
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .offset(x = 8.dp, y = 8.dp)
+                                .offset(x = 4.dp, y = 4.dp)
                                 .size(36.dp)
                                 .background(HeaderOrange, CircleShape)
                                 .border(2.dp, LightBackground, CircleShape),
