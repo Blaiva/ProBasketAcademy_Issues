@@ -11,7 +11,7 @@ class ObtenerJugadoresSinCategoriaUseCase @Inject constructor(
 ) {
     operator fun invoke(): Flow<List<Jugador>> {
         return jugadorRepository.obtenerJugadores().map { lista ->
-            lista.filter { it.categoriaId == 0L }
+            lista.filter { it.categoriaId == null }
         }
     }
 }
