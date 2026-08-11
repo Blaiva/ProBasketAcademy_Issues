@@ -74,12 +74,28 @@ class JugadorEditViewModel @Inject constructor(
 
     fun cargarJugador(id: Long) {
         if (id == 0L) {
-            _uiState.update { it.copy(isNew = true, jugadorId = 0L) }
+            _uiState.update {
+                JugadorEditState(
+                    isNew = true,
+                    jugadorId = 0L,
+                    isSaved = false,
+                    isDeleted = false,
+                    isLoading = false,
+                    errorMessage = null
+                )
+            }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    isSaved = false,
+                    isDeleted = false,
+                    errorMessage = null
+                )
+            }
             obtenerJugadorPorIdUseCase(id)
                 .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
                 .collect { jugador ->
@@ -93,7 +109,7 @@ class JugadorEditViewModel @Inject constructor(
                                 telefono = jugador.telefono,
                                 edad = jugador.edad.toString(),
                                 domicilio = jugador.domicilio,
-                                categoriaId = jugador.categoriaId,
+                                categoriaId = if (jugador.categoriaId == 0L) null else jugador.categoriaId,
                                 tallaCamiseta = jugador.tallaCamiseta,
                                 numeroCamiseta = jugador.numeroCamiseta.toString(),
                                 estatura = jugador.estatura.toString(),
