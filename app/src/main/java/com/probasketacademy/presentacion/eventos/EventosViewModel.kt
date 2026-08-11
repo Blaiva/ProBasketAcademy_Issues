@@ -31,11 +31,6 @@ class EventosViewModel @Inject constructor(
                 _uiState.update { it.copy(selectedDate = event.date) }
                 cargarEventosDelDia(event.date)
             }
-            is EventosEvent.OnMonthChanged -> {
-                val current = _uiState.value.currentYearMonth
-                val next = if (event.isNext) current.plusMonths(1) else current.minusMonths(1)
-                _uiState.update { it.copy(currentYearMonth = next) }
-            }
             is EventosEvent.OnToggleAddDialog -> {
                 _uiState.update { it.copy(showAddDialog = !it.showAddDialog) }
             }
@@ -53,7 +48,7 @@ class EventosViewModel @Inject constructor(
             val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val endOfDay = date.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            eventoRepository.obtenerEventosPorDia(startOfDay, endOfDay) // Usamos tu repositorio[cite: 5]
+            eventoRepository.obtenerEventosPorDia(startOfDay, endOfDay)
                 .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
                 .collect { eventos ->
                     _uiState.update { it.copy(isLoading = false, eventosDelDia = eventos) }

@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
             ProBasketAcademyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AppNavDisplay(
-                        backStack = rememberNavBackStack(Screen.Auth),
+                        backStack = rememberNavBackStack(Screen.Home),
                         innerPadding = innerPadding
                     )
                 }
