@@ -55,8 +55,8 @@ fun EventosScreen(
 
     // --- CONFIGURACIÓN DEL CALENDARIO KIZITONWOSE ---
     val currentMonth = remember { YearMonth.now() }
-    val startMonth = remember { currentMonth.minusMonths(24) } // Permitimos navegar 2 años atrás
-    val endMonth = remember { currentMonth.plusMonths(24) }    // y 2 años adelante
+    val startMonth = remember { currentMonth.minusMonths(24) }
+    val endMonth = remember { currentMonth.plusMonths(24) }
     val firstDayOfWeek = remember { firstDayOfWeekFromLocale() }
 
     val calendarState = rememberCalendarState(
@@ -80,12 +80,12 @@ fun EventosScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    OutlinedTextField(value = tipo, onValueChange = { tipo = it }, label = { Text("Tipo (Partido, Entrenamiento)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    OutlinedTextField(value = tipo, onValueChange = { tipo = it }, label = { Text("Tipo (Partido, Pago, Reunión)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(value = horaStr, onValueChange = { horaStr = it }, label = { Text("Hora (HH:mm)") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
                         OutlinedTextField(value = duracionStr, onValueChange = { duracionStr = it }, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
                     }
-                    OutlinedTextField(value = lugar, onValueChange = { lugar = it }, label = { Text("Lugar") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    OutlinedTextField(value = lugar, onValueChange = { lugar = it }, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
                 }
             },
             confirmButton = {
@@ -95,7 +95,7 @@ fun EventosScreen(
                             val time = LocalTime.parse(horaStr)
                             val dur = duracionStr.toFloatOrNull() ?: 1f
                             viewModel.onEvent(EventosEvent.OnGuardarEvento(titulo, tipo, time, dur, lugar))
-                        } catch (e: Exception) { /* Podrías agregar un error de UI aquí si el formato falla */ }
+                        } catch (e: Exception) { /* Manejo de error de formato */ }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) { Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold) }
@@ -109,7 +109,6 @@ fun EventosScreen(
 
     Scaffold(
         floatingActionButton = {
-            // LÓGICA DE BLOQUEO: Solo mostramos el botón (+) si el día seleccionado NO es anterior a hoy
             if (!state.selectedDate.isBefore(today)) {
                 FloatingActionButton(
                     onClick = { viewModel.onEvent(EventosEvent.OnToggleAddDialog) },
@@ -161,7 +160,6 @@ fun EventosScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-                    // Cabecera del Mes Visible
                     val visibleMonth = calendarState.firstVisibleMonth.yearMonth
                     val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
 
@@ -188,7 +186,6 @@ fun EventosScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Días de la Semana
                     val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
                     Row(modifier = Modifier.fillMaxWidth()) {
                         for (day in daysOfWeek) {
@@ -205,7 +202,6 @@ fun EventosScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Rejilla de días
                     HorizontalCalendar(
                         state = calendarState,
                         dayContent = { day ->
@@ -272,16 +268,14 @@ fun EventosScreen(
     }
 }
 
-// --- COMPONENTE PARA LA CELDA DEL DÍA ---
 @Composable
 fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, onClick: (CalendarDay) -> Unit) {
     val isCurrentMonth = day.position == DayPosition.MonthDate
 
-    // Lógica de colores según el estado del día
     val textColor = when {
         isSelected -> Color.White
         !isCurrentMonth -> TextMuted.copy(alpha = 0.3f)
-        isPast -> TextMuted // Fechas pasadas en color gris apagado
+        isPast -> TextMuted
         else -> TextDark
     }
     val bgColor = if (isSelected) HeaderOrange else Color.Transparent
@@ -293,7 +287,7 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, onClick: (Ca
             .clip(CircleShape)
             .background(bgColor)
             .clickable(
-                enabled = isCurrentMonth, // Solo dejar hacer click en días del mes activo
+                enabled = isCurrentMonth,
                 onClick = { onClick(day) }
             ),
         contentAlignment = Alignment.Center
@@ -307,19 +301,58 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, onClick: (Ca
     }
 }
 
-// --- COMPONENTE PARA EL EVENTO (Igual a tu diseño) ---
+// --- COMPONENTE PARA EL EVENTO (Adaptado 100% a tu diseño) ---
 @Composable
 fun EventoItemRow(evento: Evento) {
-    // Calculamos colores e íconos en base al tipo (Entrenamiento, Partido, Pago, Reunión)
-    val (lineColor, iconBg, iconTint, iconVector) = when (evento.tipo.lowercase()) {
-        "partido" -> listOf(BlueIcon, Color(0xFFEBF3FF), BlueIcon, Icons.Default.Flag)
-        "pago", "cuota" -> listOf(GreenTrend, Color(0xFFE8F5E9), GreenTrend, Icons.Default.Payments)
-        "reunión", "reunion" -> listOf(TextMuted, DividerColor, TextMuted, Icons.Default.ChatBubbleOutline)
-        else -> listOf(HeaderOrange, IndicatorColor, HeaderOrange, Icons.Default.SportsBasketball)
+    // Definición exacta de colores e íconos por cada tipo de evento
+    val lineColor: Color
+    val iconBg: Color
+    val iconTint: Color
+    val iconVector: ImageVector
+    val subtitleIcon: ImageVector
+
+    when (evento.tipo.lowercase()) {
+        "partido" -> {
+            lineColor = BlueIcon
+            iconBg = Color(0xFFEBF3FF)
+            iconTint = BlueIcon
+            iconVector = Icons.Default.Flag
+            subtitleIcon = Icons.Default.EmojiEvents
+        }
+        "pago", "cuota" -> {
+            lineColor = GreenTrend
+            iconBg = Color(0xFFE8F5E9)
+            iconTint = GreenTrend
+            iconVector = Icons.Default.Payments
+            subtitleIcon = Icons.Default.Notifications
+        }
+        "reunión", "reunion" -> {
+            lineColor = TextMuted
+            iconBg = DividerColor
+            iconTint = TextMuted
+            iconVector = Icons.Default.Chat
+            subtitleIcon = Icons.Default.Group
+        }
+        else -> {
+            lineColor = HeaderOrange
+            iconBg = IndicatorColor
+            iconTint = HeaderOrange
+            iconVector = Icons.Default.SportsBasketball
+            subtitleIcon = Icons.Default.LocationOn
+        }
     }
 
     val time = java.time.Instant.ofEpochMilli(evento.fechaHoraEpocaMs).atZone(ZoneId.systemDefault()).toLocalTime()
     val formatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    // Formateo para que se vea como en tu imagen: "1.5h", "2h", "30m"
+    val durationText = if (evento.duracionHoras > 0f && evento.duracionHoras < 1f) {
+        "${(evento.duracionHoras * 60).toInt()}m"
+    } else if (evento.duracionHoras % 1.0f == 0f) {
+        "${evento.duracionHoras.toInt()}h"
+    } else {
+        "${evento.duracionHoras}h"
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -331,27 +364,36 @@ fun EventoItemRow(evento: Evento) {
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(50.dp)) {
-                Text(text = time.format(formatter), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = TextDark)
-                Text(text = "${evento.duracionHoras}h", fontSize = 11.sp, color = TextMuted)
+            // Hora y Duración
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(55.dp)) {
+                Text(text = time.format(formatter), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TextDark)
+                Text(text = durationText, fontSize = 12.sp, color = TextMuted)
             }
+
             Spacer(modifier = Modifier.width(12.dp))
-            Box(modifier = Modifier.width(3.dp).height(40.dp).background(lineColor as Color, RoundedCornerShape(50)))
+
+            // Línea Vertical Separadora
+            Box(modifier = Modifier.width(3.dp).height(40.dp).background(lineColor, RoundedCornerShape(50)))
+
             Spacer(modifier = Modifier.width(16.dp))
+
+            // Textos del evento
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = evento.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextDark)
+                Text(text = evento.titulo, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = TextMuted, modifier = Modifier.size(12.dp))
+                    Icon(subtitleIcon, contentDescription = null, tint = TextMuted, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = evento.lugar, fontSize = 12.sp, color = TextMuted)
+                    Text(text = evento.lugar, fontSize = 13.sp, color = TextMuted)
                 }
             }
+
+            // Ícono circular a la derecha
             Box(
-                modifier = Modifier.size(40.dp).background(iconBg as Color, CircleShape),
+                modifier = Modifier.size(44.dp).background(iconBg, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(iconVector as ImageVector, contentDescription = null, tint = iconTint as Color, modifier = Modifier.size(20.dp))
+                Icon(iconVector, contentDescription = null, tint = iconTint, modifier = Modifier.size(22.dp))
             }
         }
     }
