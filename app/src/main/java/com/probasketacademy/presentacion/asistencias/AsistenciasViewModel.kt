@@ -6,8 +6,11 @@ import com.probasketacademy.domain.model.Asistencia
 import com.probasketacademy.domain.repository.AsistenciaRepository
 import com.probasketacademy.domain.repository.JugadorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,59 +22,80 @@ class AsistenciasViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AsistenciasState())
     val uiState: StateFlow<AsistenciasState> = _uiState.asStateFlow()
 
+    private var job: Job? = null
+    private var asistenciasActuales: List<Asistencia> = emptyList()
+
     init {
-        cargarJugadores()
+        cargarDatosPorFecha(_uiState.value.selectedDate)
     }
 
     fun onEvent(event: AsistenciasEvent) {
         when (event) {
             is AsistenciasEvent.OnJugadorToggled -> {
+                if (!_uiState.value.isEditable) return // Bloquea si no es editable
                 val nuevasAsistencias = _uiState.value.asistencias.toMutableMap()
                 nuevasAsistencias[event.jugadorId] = event.asistio
                 _uiState.update { it.copy(asistencias = nuevasAsistencias) }
             }
             is AsistenciasEvent.OnConfirmarAsistencia -> guardarAsistencias()
+            is AsistenciasEvent.OnDateSelected -> {
+                _uiState.update { it.copy(selectedDate = event.date) }
+                cargarDatosPorFecha(event.date)
+            }
+            is AsistenciasEvent.OnVisibleMonthChanged -> {
+                _uiState.update { it.copy(currentYearMonth = event.yearMonth) }
+            }
+            is AsistenciasEvent.OnResetGuardado -> {
+                _uiState.update { it.copy(isSaved = false) }
+            }
         }
     }
 
-    private fun cargarJugadores() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            // Cargamos la lista de jugadores que ya tenemos creados[cite: 1]
-            jugadorRepository.obtenerJugadores()
-                .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
-                .collect { lista ->
-                    // Inicializamos todos como "No asistió" (false) por defecto
-                    val asistenciasIniciales = lista.associate { it.jugadorId to false }
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            jugadores = lista,
-                            asistencias = asistenciasIniciales
-                        )
-                    }
+    private fun cargarDatosPorFecha(date: LocalDate) {
+        job?.cancel()
+        job = viewModelScope.launch {
+            val isToday = date == LocalDate.now()
+            _uiState.update { it.copy(isLoading = true, isEditable = isToday) }
+
+            val fechaTimestamp = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+            combine(
+                jugadorRepository.obtenerJugadores(),
+                asistenciaRepository.obtenerAsistenciasPorDia(fechaTimestamp)
+            ) { jugadores, asistencias ->
+                asistenciasActuales = asistencias // Guardamos para no duplicar en BD al actualizar
+                val asistenciasMap = jugadores.associate { j ->
+                    val asis = asistencias.find { it.jugadorId == j.jugadorId }
+                    j.jugadorId to (asis?.asistio ?: false) // <-- Por defecto, si no hay registro, es FALSE (Ausente)
                 }
+                _uiState.update {
+                    it.copy(isLoading = false, jugadores = jugadores, asistencias = asistenciasMap)
+                }
+            }.catch { e ->
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
+            }.collect()
         }
     }
 
     private fun guardarAsistencias() {
+        if (!_uiState.value.isEditable) return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val state = _uiState.value
-            val fechaActualMs = System.currentTimeMillis()
+            val fechaTimestamp = state.selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            // Mapeamos los datos al modelo de dominio Asistencia
             val registros = state.jugadores.map { jugador ->
+                val existente = asistenciasActuales.find { it.jugadorId == jugador.jugadorId }
                 Asistencia(
+                    id = existente?.id ?: 0L, // Si ya existe, lo actualiza, si no, lo crea (Room @Upsert)
                     jugadorId = jugador.jugadorId,
                     categoriaId = jugador.categoriaId,
-                    fechaEpocaMs = fechaActualMs,
+                    fechaEpocaMs = fechaTimestamp,
                     asistio = state.asistencias[jugador.jugadorId] ?: false,
                     nombreJugador = jugador.nombre
                 )
             }
 
-            // Guardamos usando el repositorio[cite: 1]
             asistenciaRepository.registrarAsistencias(registros)
             _uiState.update { it.copy(isLoading = false, isSaved = true) }
         }
