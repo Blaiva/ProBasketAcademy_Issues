@@ -19,7 +19,7 @@ data class JugadorEditState(
     val telefono: String = "",
     val edad: String = "",
     val domicilio: String = "",
-    val categoriaId: Long? = 0,
+    val categoriaId: Long? = null,
     val tallaCamiseta: String = "",
     val numeroCamiseta: String = "",
     val estatura: String = "",

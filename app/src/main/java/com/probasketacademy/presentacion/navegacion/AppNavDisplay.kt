@@ -3,15 +3,15 @@ package com.probasketacademy.presentacion.navegacion
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FactCheck
+import androidx.compose.material.icons.automirrored.outlined.FactCheck
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.FactCheck
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
@@ -23,11 +23,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -42,7 +37,8 @@ import com.probasketacademy.presentacion.categorias.list.CategoriasListScreen
 import com.probasketacademy.presentacion.categorias.detalle.CategoriaDetalleScreen
 import com.probasketacademy.presentacion.asistencias.AsistenciasScreen
 import com.probasketacademy.presentacion.eventos.EventosScreen
-import com.probasketacademy.presentacion.finanzas.PagosScreen
+import com.probasketacademy.presentacion.finanzas.list.PagosListScreen
+import com.probasketacademy.presentacion.finanzas.detalle.PagosDetalleScreen
 
 // --- IMPORTACIONES DE TU TEMA ---
 import com.probasketacademy.ui.theme.IndicatorColor
@@ -63,6 +59,7 @@ fun AppNavDisplay(
 ) {
     val currentScreen = backStack.lastOrNull()
 
+    // Mostramos la barra inferior solo en las pantallas principales
     val showBottomBar = currentScreen is Screen.Home ||
             currentScreen is Screen.Jugadores ||
             currentScreen is Screen.Categorias ||
@@ -77,10 +74,10 @@ fun AppNavDisplay(
                 ProBasketBottomBar(backStack = backStack, currentScreen = currentScreen)
             }
         }
-    ) { innerPadding ->
+    ) { scaffoldPadding ->
         NavDisplay(
             backStack = backStack,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(scaffoldPadding),
             entryProvider = entryProvider {
                 entry<Screen.Auth> {
                     AuthScreen(
@@ -115,7 +112,7 @@ fun AppNavDisplay(
                 entry<Screen.JugadorEdit> { key ->
                     JugadorEditScreen(
                         jugadorId = key.jugadorId,
-                        onNavigateBack = { if(backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) }
+                        onNavigateBack = { if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) }
                     )
                 }
 
@@ -127,31 +124,42 @@ fun AppNavDisplay(
                     )
                 }
 
-                // 5.2 Ver Detalles de Categoría
                 entry<Screen.CategoriaDetalle> { key ->
                     CategoriaDetalleScreen(
                         categoriaId = key.categoriaId,
-                        onNavigateBack = { if(backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) }
+                        onNavigateBack = { if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) }
                     )
                 }
 
-                // 6. PASE DE LISTA (ASISTENCIAS)
                 entry<Screen.Asistencias> {
                     AsistenciasScreen(
                         onNavigateBack = {
-                            if(backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
+                            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
                         }
                     )
                 }
 
-                // 7. CALENDARIO Y EVENTOS
                 entry<Screen.Eventos> {
                     EventosScreen()
                 }
 
-                // 8. FINANZAS / PAGOS
+                // 8. FINANZAS: LISTA DE JUGADORES (Menú Inferior)
                 entry<Screen.Pagos> {
-                    PagosScreen()
+                    PagosListScreen(
+                        onNavigateToDetalle = { jugadorId ->
+                            backStack.add(Screen.PagosDetalle(jugadorId))
+                        }
+                    )
+                }
+
+                // 9. FINANZAS: ESTADO DE CUENTA (Detalle individual)
+                entry<Screen.PagosDetalle> { key ->
+                    PagosDetalleScreen(
+                        jugadorId = key.jugadorId,
+                        onNavigateBack = {
+                            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
+                        }
+                    )
                 }
             }
         )
@@ -168,7 +176,7 @@ private fun ProBasketBottomBar(
         BottomNavItem("Jugadores", Screen.Jugadores, Icons.Filled.Person, Icons.Outlined.Person),
         BottomNavItem("Categorías", Screen.Categorias, Icons.Filled.Groups, Icons.Outlined.Groups),
         BottomNavItem("Calendario", Screen.Eventos, Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
-        BottomNavItem("Asistencia", Screen.Asistencias, Icons.Filled.FactCheck, Icons.Outlined.FactCheck),
+        BottomNavItem("Asistencia", Screen.Asistencias, Icons.AutoMirrored.Filled.FactCheck, Icons.AutoMirrored.Outlined.FactCheck),
         BottomNavItem("Finanzas", Screen.Pagos, Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet)
     )
 
@@ -177,6 +185,7 @@ private fun ProBasketBottomBar(
         tonalElevation = 8.dp
     ) {
         items.forEach { item ->
+            // Usamos .javaClass para que coincida de forma segura al comparar el screen actual
             val isSelected = currentScreen?.javaClass == item.route.javaClass
 
             NavigationBarItem(
@@ -185,10 +194,12 @@ private fun ProBasketBottomBar(
                     if (currentScreen != item.route) {
                         val existingIndex = backStack.indexOf(item.route)
                         if (existingIndex != -1) {
+                            // Si ya existe en el stack, quitamos lo que esté por encima (pop)
                             while (backStack.lastIndex > existingIndex) {
                                 backStack.removeAt(backStack.lastIndex)
                             }
                         } else {
+                            // Si no existe, navegamos hacia ella agregándola
                             backStack.add(item.route)
                         }
                     }

@@ -2,6 +2,7 @@ package com.probasketacademy.data.local.pago
 
 data class PagoConJugadorDto(
     val pagoId: Long,
+    val jugadorId: Long,
     val concepto: String,
     val monto: Double,
     val fecha: String,
