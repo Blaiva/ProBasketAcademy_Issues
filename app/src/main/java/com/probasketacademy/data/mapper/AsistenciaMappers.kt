@@ -13,10 +13,18 @@ fun AsistenciaJugadorDto.toDomain(categoriaId: Long, fechaTimestamp: Long): Asis
     fotoUri = fotoUri
 )
 
+fun AsistenciaEntity.toDomain(): Asistencia = Asistencia(
+    id = id,
+    jugadorId = jugadorId,
+    categoriaId = categoriaId,
+    fechaEpocaMs = fechaEpocaMs,
+    asistio = asistio
+)
+
 fun Asistencia.toEntity(): AsistenciaEntity = AsistenciaEntity(
     id = id,
     jugadorId = jugadorId,
-    categoriaId = if (categoriaId == 0L) null else categoriaId,
+    categoriaId = categoriaId,
     fechaEpocaMs = fechaEpocaMs,
     asistio = asistio
 )
