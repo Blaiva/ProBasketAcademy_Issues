@@ -9,7 +9,7 @@ class RemoverJugadorDeCategoriaUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(jugador: Jugador) {
         val jugadorSinCategoria = jugador.copy(
-            categoriaId = 0L,
+            categoriaId = null,
             categoriaNombre = ""
         )
         jugadorRepository.guardarJugador(jugadorSinCategoria)

@@ -16,7 +16,7 @@ fun AsistenciaJugadorDto.toDomain(categoriaId: Long, fechaTimestamp: Long): Asis
 fun Asistencia.toEntity(): AsistenciaEntity = AsistenciaEntity(
     id = id,
     jugadorId = jugadorId,
-    categoriaId = categoriaId,
+    categoriaId = if (categoriaId == 0L) null else categoriaId,
     fechaEpocaMs = fechaEpocaMs,
     asistio = asistio
 )

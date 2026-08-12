@@ -12,7 +12,7 @@ class EliminarCategoriaUseCase @Inject constructor(
     suspend operator fun invoke(categoriaId: Long) {
         val jugadores = jugadorRepository.obtenerJugadoresPorCategoria(categoriaId).first()
         jugadores.forEach { jugador ->
-            jugadorRepository.guardarJugador(jugador.copy(categoriaId = 0L, categoriaNombre = ""))
+            jugadorRepository.guardarJugador(jugador.copy(categoriaId = null, categoriaNombre = ""))
         }
         categoriaRepository.eliminarCategoria(categoriaId)
     }

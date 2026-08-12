@@ -13,6 +13,7 @@ interface PagoDao {
     @Query("""
         SELECT 
             p.id AS pagoId,
+            p.jugadorId AS jugadorId,
             p.concepto AS concepto,
             p.monto AS monto,
             p.fecha AS fecha,
@@ -30,6 +31,7 @@ interface PagoDao {
     @Query("""
         SELECT 
             p.id AS pagoId,
+            p.jugadorId AS jugadorId,
             p.concepto AS concepto,
             p.monto AS monto,
             p.fecha AS fecha,

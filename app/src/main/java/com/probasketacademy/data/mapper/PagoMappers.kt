@@ -6,7 +6,7 @@ import com.probasketacademy.domain.model.Pago
 
 fun PagoConJugadorDto.toDomain(): Pago = Pago(
     id = pagoId,
-    jugadorId = 0L,
+    jugadorId = jugadorId,
     concepto = concepto,
     monto = monto,
     fecha = fecha,
