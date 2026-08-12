@@ -6,6 +6,7 @@ import java.time.YearMonth
 
 data class EventosState(
     val eventosDelDia: List<Evento> = emptyList(),
+    val diasConEventos: Set<LocalDate> = emptySet(), // <-- Para los puntitos
     val selectedDate: LocalDate = LocalDate.now(),
     val currentYearMonth: YearMonth = YearMonth.now(),
     val isLoading: Boolean = false,
