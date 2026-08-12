@@ -22,4 +22,11 @@ interface AsistenciaDao {
         ORDER BY j.nombre ASC
     """)
     fun obtenerListaAsistenciaPorCategoria(categoriaId: Long, fechaTimestamp: Long): Flow<List<AsistenciaJugadorDto>>
+
+    // --- NUEVAS CONSULTAS ---
+    @Query("SELECT * FROM asistencias WHERE fechaEpocaMs = :fechaTimestamp")
+    fun obtenerAsistenciasPorDia(fechaTimestamp: Long): Flow<List<AsistenciaEntity>>
+
+    @Query("SELECT AVG(CAST(asistio AS INTEGER)) * 100 FROM asistencias WHERE fechaEpocaMs BETWEEN :inicio AND :fin")
+    fun obtenerAsistenciaPromedioPorMes(inicio: Long, fin: Long): Flow<Double?>
 }
