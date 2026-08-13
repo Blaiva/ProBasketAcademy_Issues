@@ -1,62 +1,78 @@
 package com.probasketacademy.presentacion.home
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.probasketacademy.domain.model.Pago
+import com.probasketacademy.domain.repository.AsistenciaRepository
+import com.probasketacademy.domain.repository.JugadorRepository
 import com.probasketacademy.domain.repository.PagoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.time.LocalTime
+import java.time.YearMonth
+import java.time.ZoneId
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val pagoRepository: PagoRepository
+    private val pagoRepository: PagoRepository,
+    private val asistenciaRepository: AsistenciaRepository,
+    private val jugadorRepository: JugadorRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeState())
     val uiState: StateFlow<HomeState> = _uiState.asStateFlow()
 
     init {
-        cargarCobrosPendientes()
+        cargarDatosDelDashboard()
     }
 
-    private fun cargarCobrosPendientes() {
+    private fun cargarDatosDelDashboard() {
+        _uiState.update { it.copy(isLoading = true) }
+
+        val yearMonth = YearMonth.now()
+        val inicioMes =
+            yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val finMes = yearMonth.atEndOfMonth().atTime(LocalTime.MAX).atZone(ZoneId.systemDefault())
+            .toInstant().toEpochMilli()
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            // 1. Cargar Total de Jugadores Activos
+            jugadorRepository.obtenerJugadores().collectLatest { jugadores ->
+                val activos = jugadores.count { it.estado.equals("Activo", ignoreCase = true) }
+                _uiState.update { it.copy(jugadoresActivos = activos) }
+            }
+        }
 
-            pagoRepository.obtenerCobrosPendientes()
-                .catch { exception ->
-                    _uiState.update {
-                        it.copy(isLoading = false, errorMessage = exception.message)
-                    }
-                }
-                .collect { pagos ->
-                    // Si la base de datos está vacía, mostramos datos de prueba para igualar tu diseño.
-                    // Una vez tengas datos reales, puedes quitar este "if" y dejar solo la asignación de "pagos".
-                    val pagosAMostrar = if (pagos.isEmpty()) getDummyPagos() else pagos
-
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            cobrosPendientes = pagosAMostrar
-                        )
-                    }
+        viewModelScope.launch {
+            // 2. Cargar Asistencia Promedio del Mes
+            asistenciaRepository.obtenerAsistenciaPromedioPorMes(inicioMes, finMes)
+                .collectLatest { promedio ->
+                    val promStr = if (promedio != null) "${promedio.toInt()}%" else "0%"
+                    _uiState.update { it.copy(asistenciaPromedio = promStr) }
                 }
         }
-    }
 
-    // Datos de prueba para que se vea exactamente como en tu diseño de Figma
-    private fun getDummyPagos(): List<Pago> {
-        return listOf(
-            Pago(id = 1, jugadorNombre = "Mateo Pérez", concepto = "Cuota Julio", monto = 45.0, fecha = "Hace 5 días", estado = "PENDIENTE", jugadorId = 1),
-            Pago(id = 2, jugadorNombre = "Laura Gómez", concepto = "Uniforme", monto = 80.0, fecha = "Hace 2 días", estado = "PENDIENTE", jugadorId = 2),
-            Pago(id = 3, jugadorNombre = "Diego Ruiz", concepto = "Torneo Verano", monto = 25.0, fecha = "Hoy", estado = "PENDIENTE", jugadorId = 3)
-        )
+        viewModelScope.launch {
+            // 3. Cargar Cobros Pendientes
+            pagoRepository.obtenerCobrosPendientes().collectLatest { pagosPendientes ->
+                _uiState.update { it.copy(cobrosPendientes = pagosPendientes) }
+            }
+        }
+
+        viewModelScope.launch {
+            // 4. Calcular Ingresos Reales Totales
+            pagoRepository.obtenerIngresosTotales().collectLatest { total ->
+                val ingresos = total ?: 0.0
+                val formatoMoneda = NumberFormat.getNumberInstance(Locale("es", "DO"))
+                val ingresoStr = "$${formatoMoneda.format(ingresos)}"
+
+                _uiState.update {
+                    it.copy(isLoading = false, ingresosMes = ingresoStr)
+                }
+            }
+        }
     }
 }
