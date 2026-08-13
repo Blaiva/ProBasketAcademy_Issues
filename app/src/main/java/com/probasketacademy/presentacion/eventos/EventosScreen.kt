@@ -62,8 +62,6 @@ fun EventosScreen(
         firstVisibleMonth = currentMonth,
         firstDayOfWeek = firstDayOfWeek
     )
-
-    // Escuchamos los cambios de mes (al deslizar o usar flechas) para cargar los puntitos
     val visibleMonth = calendarState.firstVisibleMonth.yearMonth
     LaunchedEffect(visibleMonth) {
         viewModel.onEvent(EventosEvent.OnVisibleMonthChanged(visibleMonth))
@@ -297,8 +295,6 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, hasEvent: Bo
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             fontSize = 14.sp
         )
-
-        // --- DIBUJO DEL PUNTO AZUL DEBAJO DEL NÚMERO ---
         if (hasEvent) {
             Box(
                 modifier = Modifier

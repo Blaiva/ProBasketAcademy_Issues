@@ -65,7 +65,6 @@ fun AsistenciasScreen(
 
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) {
-            // Reiniciamos el estado para evitar el bug al volver a entrar
             viewModel.onEvent(AsistenciasEvent.OnResetGuardado)
             onNavigateBack()
         }
@@ -76,7 +75,6 @@ fun AsistenciasScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            // --- ENCABEZADO ---
             item {
                 Box(
                     modifier = Modifier.fillMaxWidth().background(HeaderOrange, RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)).padding(horizontal = 16.dp, vertical = 20.dp)
@@ -96,8 +94,6 @@ fun AsistenciasScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
-            // --- CALENDARIO KIZITONWOSE ---
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -145,8 +141,6 @@ fun AsistenciasScreen(
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
-
-            // --- TÍTULO DE LISTA DE JUGADORES ---
             item {
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     Text("Pase de Lista", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
@@ -159,17 +153,13 @@ fun AsistenciasScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
-            // --- LISTAS DE JUGADORES DINÁMICAS ---
             if (state.isLoading) {
                 item { Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = HeaderOrange) } }
             } else {
 
-                // Dividimos la lista maestra en dos listas
                 val presentes = state.jugadores.filter { state.asistencias[it.jugadorId] == true }
                 val ausentes = state.jugadores.filter { state.asistencias[it.jugadorId] != true }
 
-                // 1. TARJETA DE AUSENTES (Arriba)
                 if (ausentes.isNotEmpty()) {
                     item {
                         Text(
@@ -202,8 +192,6 @@ fun AsistenciasScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
-
-                // 2. TARJETA DE PRESENTES (Abajo)
                 if (presentes.isNotEmpty()) {
                     item {
                         Text(
@@ -236,14 +224,12 @@ fun AsistenciasScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
-
-                // --- BOTONES INFERIORES (SOLO SI ES HOY) ---
                 if (state.isEditable) {
                     item {
                         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             Button(
                                 onClick = {
-                                    viewModel.onEvent(AsistenciasEvent.OnResetGuardado) // Limpiamos preventivamente
+                                    viewModel.onEvent(AsistenciasEvent.OnResetGuardado)
                                     onNavigateBack()
                                 },
                                 modifier = Modifier.weight(1f).height(56.dp),
@@ -317,7 +303,7 @@ private fun JugadorAsistenciaRow(
         Checkbox(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
-            enabled = isEditable, // Si es falso, la casilla se bloquea
+            enabled = isEditable,
             colors = CheckboxDefaults.colors(checkedColor = SuccessGreen, checkmarkColor = Color.White)
         )
     }

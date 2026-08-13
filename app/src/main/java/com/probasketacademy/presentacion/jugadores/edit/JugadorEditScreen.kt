@@ -55,11 +55,9 @@ fun JugadorEditScreen(
     var tallaExpanded by remember { mutableStateOf(false) }
     var vinculoExpanded by remember { mutableStateOf(false) }
 
-    // Selector de imágenes de la galería
     val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             try {
-                // Mantiene el permiso de lectura de la imagen incluso si se cierra la app
                 context.contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -127,8 +125,6 @@ fun JugadorEditScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-
-                    // --- SECCIÓN FOTO MODO EDICIÓN ---
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         contentAlignment = Alignment.Center
@@ -167,7 +163,6 @@ fun JugadorEditScreen(
                             }
                         }
                     }
-                    // ---------------------------------
 
                     Text("Información Personal", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 

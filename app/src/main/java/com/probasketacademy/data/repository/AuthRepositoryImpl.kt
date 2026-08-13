@@ -31,11 +31,10 @@ class AuthRepositoryImpl @Inject constructor(
                 .addCredentialOption(googleIdOption)
                 .build()
 
-            // 2. Lanzar el Bottom Sheet nativo
             val result = credentialManager.getCredential(context, request)
             val credential = result.credential
 
-            // 3. Intercambiar Token de Google por Credencial de Firebase
+
             if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 val firebaseAuthCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)

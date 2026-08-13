@@ -58,7 +58,6 @@ fun JugadoresListScreen(
         containerColor = LightBackground
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Cabecera Naranja con tu Logo
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -99,8 +98,6 @@ fun JugadoresListScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Título y Buscador
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
                     text = "Directorio de\nJugadores",
@@ -134,8 +131,6 @@ fun JugadoresListScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Lista de Jugadores
             if (state.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = HeaderOrange)
@@ -191,7 +186,6 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar (Imagen o Iniciales)
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -221,7 +215,6 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Detalles usando el modelo de la DB
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
                 Text(
@@ -231,7 +224,6 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
                 )
             }
 
-            // Chip Estado
             val isActive = jugador.estado.equals("Activo", ignoreCase = true)
             Box(
                 modifier = Modifier

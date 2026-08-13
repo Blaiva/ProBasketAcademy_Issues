@@ -105,7 +105,6 @@ fun CategoriasListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // ENCABEZADO CON LOGO Y PERFIL
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -146,8 +145,6 @@ fun CategoriasListScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Título
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
                     text = "Categorías\nAdministradas",
@@ -165,8 +162,6 @@ fun CategoriasListScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            // Lista
             if (state.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = HeaderOrange)

@@ -47,7 +47,6 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // 2. Cargar Asistencia Promedio del Mes
             asistenciaRepository.obtenerAsistenciaPromedioPorMes(inicioMes, finMes)
                 .collectLatest { promedio ->
                     val promStr = if (promedio != null) "${promedio.toInt()}%" else "0%"
@@ -56,14 +55,12 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // 3. Cargar Cobros Pendientes
             pagoRepository.obtenerCobrosPendientes().collectLatest { pagosPendientes ->
                 _uiState.update { it.copy(cobrosPendientes = pagosPendientes) }
             }
         }
 
         viewModelScope.launch {
-            // 4. Calcular Ingresos Reales Totales
             pagoRepository.obtenerIngresosTotales().collectLatest { total ->
                 val ingresos = total ?: 0.0
                 val formatoMoneda = NumberFormat.getNumberInstance(Locale("es", "DO"))

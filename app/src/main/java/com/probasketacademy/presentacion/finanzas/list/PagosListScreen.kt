@@ -36,7 +36,6 @@ fun PagosListScreen(
 
     Scaffold(containerColor = LightBackground) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // ENCABEZADO ESTÁNDAR
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -65,7 +64,6 @@ fun PagosListScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // TÍTULO Y BUSCADOR
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text("Finanzas y Pagos", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
                 Spacer(modifier = Modifier.height(4.dp))

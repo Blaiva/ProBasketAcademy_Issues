@@ -242,12 +242,11 @@ private fun PagoItemRow(pago: Pago, onMarcarPagado: () -> Unit) {
 
         Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
             if (isPending) {
-                // --- BOTÓN CLICKABLE PARA MARCAR COMO PAGADO ---
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(BadgeUrgentBg)
-                        .clickable { onMarcarPagado() } // Dispara el cambio a pagado
+                        .clickable { onMarcarPagado() }
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -259,7 +258,6 @@ private fun PagoItemRow(pago: Pago, onMarcarPagado: () -> Unit) {
                     )
                 }
             } else {
-                // ETIQUETA VERDE NO CLICKABLE
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
