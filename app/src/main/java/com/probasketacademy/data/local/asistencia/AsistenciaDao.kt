@@ -23,7 +23,6 @@ interface AsistenciaDao {
     """)
     fun obtenerListaAsistenciaPorCategoria(categoriaId: Long, fechaTimestamp: Long): Flow<List<AsistenciaJugadorDto>>
 
-    // --- NUEVAS CONSULTAS ---
     @Query("SELECT * FROM asistencias WHERE fechaEpocaMs = :fechaTimestamp")
     fun obtenerAsistenciasPorDia(fechaTimestamp: Long): Flow<List<AsistenciaEntity>>
 

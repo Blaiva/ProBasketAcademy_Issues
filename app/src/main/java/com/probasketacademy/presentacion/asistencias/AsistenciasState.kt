@@ -11,7 +11,7 @@ data class AsistenciasState(
     val asistencias: Map<Long, Boolean> = emptyMap(),
     val selectedDate: LocalDate = LocalDate.now(),
     val currentYearMonth: YearMonth = YearMonth.now(),
-    val isEditable: Boolean = true, // Controla si es hoy y se puede modificar
+    val isEditable: Boolean = true,
     val isSaved: Boolean = false,
     val errorMessage: String? = null
 )

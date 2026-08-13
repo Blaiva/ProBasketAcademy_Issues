@@ -37,7 +37,6 @@ fun CategoriaDetalleScreen(
         viewModel.onEvent(CategoriaDetalleEvent.OnCargarDetalle(categoriaId))
     }
 
-    // --- DIÁLOGO DE CONFIRMACIÓN DE GUARDADO ---
     if (state.showSaveSuccessDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(CategoriaDetalleEvent.OnShowSaveSuccessDialogChanged(false)) },
@@ -54,8 +53,6 @@ fun CategoriaDetalleScreen(
             containerColor = CardBackground
         )
     }
-
-    // --- DIÁLOGO DE CONFIRMACIÓN DE ELIMINACIÓN ---
     if (state.showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged(false)) },
@@ -79,8 +76,6 @@ fun CategoriaDetalleScreen(
             containerColor = CardBackground
         )
     }
-
-    // --- DIÁLOGO DE ÉXITO DE ELIMINACIÓN ---
     if (state.showDeleteSuccessDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -104,7 +99,6 @@ fun CategoriaDetalleScreen(
         )
     }
 
-    // --- DIÁLOGO PARA AGREGAR JUGADORES A LA CATEGORÍA ---
     if (state.showAddJugadoresDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged(false)) },
@@ -265,8 +259,6 @@ fun CategoriaDetalleScreen(
                         }
                     }
                 }
-
-                // --- SECCIÓN ENCABEZADO JUGADORES ASIGNADOS + BOTÓN AGREGAR ---
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -291,8 +283,6 @@ fun CategoriaDetalleScreen(
                         }
                     }
                 }
-
-                // --- LISTA DE JUGADORES ASIGNADOS ---
                 if (state.jugadoresAsignados.isEmpty()) {
                     item {
                         Box(

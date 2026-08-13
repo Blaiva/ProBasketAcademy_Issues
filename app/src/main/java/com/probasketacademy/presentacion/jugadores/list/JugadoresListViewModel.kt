@@ -31,10 +31,8 @@ class JugadoresListViewModel @Inject constructor(
                 }
             }
             is JugadoresListEvent.OnAddJugadorClicked -> {
-                // Se maneja a nivel de UI para la navegación
             }
             is JugadoresListEvent.OnJugadorClicked -> {
-                // Se maneja a nivel de UI para navegar al detalle/edición
             }
         }
     }

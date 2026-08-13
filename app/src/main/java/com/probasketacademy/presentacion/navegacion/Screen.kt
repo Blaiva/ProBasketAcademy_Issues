@@ -15,7 +15,6 @@ sealed interface Screen : NavKey {
     @Serializable data class CategoriaAsignar(val categoriaId: Long) : Screen
     @Serializable data class CategoriaDetalle(val categoriaId: Long) : Screen
 
-    // --- RUTAS DE FINANZAS REDISEÑADAS ---
     @Serializable data object Pagos : Screen
     @Serializable data class PagosDetalle(val jugadorId: Long) : Screen
 }

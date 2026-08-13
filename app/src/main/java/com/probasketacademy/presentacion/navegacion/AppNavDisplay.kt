@@ -59,7 +59,6 @@ fun AppNavDisplay(
 ) {
     val currentScreen = backStack.lastOrNull()
 
-    // Mostramos la barra inferior solo en las pantallas principales
     val showBottomBar = currentScreen is Screen.Home ||
             currentScreen is Screen.Jugadores ||
             currentScreen is Screen.Categorias ||
@@ -143,7 +142,6 @@ fun AppNavDisplay(
                     EventosScreen()
                 }
 
-                // 8. FINANZAS: LISTA DE JUGADORES (Menú Inferior)
                 entry<Screen.Pagos> {
                     PagosListScreen(
                         onNavigateToDetalle = { jugadorId ->
@@ -152,7 +150,6 @@ fun AppNavDisplay(
                     )
                 }
 
-                // 9. FINANZAS: ESTADO DE CUENTA (Detalle individual)
                 entry<Screen.PagosDetalle> { key ->
                     PagosDetalleScreen(
                         jugadorId = key.jugadorId,
@@ -185,7 +182,6 @@ private fun ProBasketBottomBar(
         tonalElevation = 8.dp
     ) {
         items.forEach { item ->
-            // Usamos .javaClass para que coincida de forma segura al comparar el screen actual
             val isSelected = currentScreen?.javaClass == item.route.javaClass
 
             NavigationBarItem(
@@ -194,12 +190,10 @@ private fun ProBasketBottomBar(
                     if (currentScreen != item.route) {
                         val existingIndex = backStack.indexOf(item.route)
                         if (existingIndex != -1) {
-                            // Si ya existe en el stack, quitamos lo que esté por encima (pop)
                             while (backStack.lastIndex > existingIndex) {
                                 backStack.removeAt(backStack.lastIndex)
                             }
                         } else {
-                            // Si no existe, navegamos hacia ella agregándola
                             backStack.add(item.route)
                         }
                     }

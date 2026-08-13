@@ -102,7 +102,6 @@ class EventosViewModel @Inject constructor(
 
             eventoRepository.guardarEvento(nuevoEvento)
             _uiState.update { it.copy(showAddDialog = false) }
-            // Al guardar, refrescamos tanto el día como los puntitos del mes
             cargarEventosDelDia(selectedDate)
             cargarEventosDelMes(_uiState.value.currentYearMonth)
         }

@@ -12,8 +12,6 @@ data class JugadorEditState(
     val isDeleted: Boolean = false,
     val isNew: Boolean = true,
     val errorMessage: String? = null,
-
-    // Campos del formulario
     val jugadorId: Long = 0,
     val nombre: String = "",
     val telefono: String = "",
@@ -32,11 +30,7 @@ data class JugadorEditState(
     val docCompleta: Boolean = true,
     val fotoUri: String? = null,
     val categoriaNombre: String = "",
-
-    // Listas para Dropdowns
     val categorias: List<Categoria> = emptyList(),
-
-    // Mensajes de error por campo
     val nombreError: String? = null,
     val telefonoError: String? = null,
     val edadError: String? = null,

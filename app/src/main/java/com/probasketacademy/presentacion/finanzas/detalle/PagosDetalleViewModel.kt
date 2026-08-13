@@ -96,19 +96,15 @@ class PagosDetalleViewModel @Inject constructor(
             )
 
             pagoRepository.registrarPago(nuevoPago)
-            cargarPagos() // Refrescamos la lista
+            cargarPagos()
         }
     }
 
     private fun marcarComoPagado(pago: Pago) {
         viewModelScope.launch {
-            // Creamos una copia del pago exacto pero con estado "PAGADO"
             val pagoActualizado = pago.copy(estado = "PAGADO")
-
-            // Lo guardamos en la base de datos (se actualiza automáticamente)
             pagoRepository.registrarPago(pagoActualizado)
-
-            cargarPagos() // Refrescamos para recalcular el saldo
+            cargarPagos()
         }
     }
 }

@@ -87,7 +87,7 @@ class AsistenciasViewModel @Inject constructor(
             val registros = state.jugadores.map { jugador ->
                 val existente = asistenciasActuales.find { it.jugadorId == jugador.jugadorId }
                 Asistencia(
-                    id = existente?.id ?: 0L, // Si ya existe, lo actualiza, si no, lo crea (Room @Upsert)
+                    id = existente?.id ?: 0L,
                     jugadorId = jugador.jugadorId,
                     categoriaId = jugador.categoriaId,
                     fechaEpocaMs = fechaTimestamp,

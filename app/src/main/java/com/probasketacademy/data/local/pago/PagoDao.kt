@@ -27,7 +27,6 @@ interface PagoDao {
     """)
     fun obtenerPagosPorJugador(jugadorId: Long): Flow<List<PagoConJugadorDto>>
 
-    // Consulta explícita para cobros pendientes mostrados en el Dashboard
     @Query("""
         SELECT 
             p.id AS pagoId,
@@ -44,4 +43,11 @@ interface PagoDao {
         ORDER BY p.id DESC
     """)
     fun obtenerCobrosPendientes(): Flow<List<PagoConJugadorDto>>
+
+    @Query("""
+        SELECT SUM(monto) 
+        FROM pagos 
+        WHERE estado = 'PAGADO'
+    """)
+    fun obtenerIngresosTotales(): Flow<Double?>
 }
