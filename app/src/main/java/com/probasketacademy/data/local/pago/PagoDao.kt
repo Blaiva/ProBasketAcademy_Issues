@@ -44,4 +44,11 @@ interface PagoDao {
         ORDER BY p.id DESC
     """)
     fun obtenerCobrosPendientes(): Flow<List<PagoConJugadorDto>>
+
+    @Query("""
+        SELECT SUM(monto) 
+        FROM pagos 
+        WHERE estado = 'PAGADO'
+    """)
+    fun obtenerIngresosTotales(): Flow<Double?>
 }
