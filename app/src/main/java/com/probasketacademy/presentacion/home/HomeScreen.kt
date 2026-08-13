@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,13 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Pago
 import com.probasketacademy.presentacion.navegacion.Screen
-import com.probasketacademy.ui.theme.* // Importamos todo de tu theme
+import com.probasketacademy.ui.theme.*
 
 @Composable
 fun HomeScreen(
@@ -40,16 +40,13 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    // Usamos un Column principal para que el Header ocupe todo el ancho
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(LightBackgroundHome)
     ) {
-        // 1. Encabezado Naranja Estándar
         HomeHeader(onLogout)
 
-        // 2. Contenido Scrolleable
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -64,8 +61,8 @@ fun HomeScreen(
                 StatCard(
                     title = "JUGADORES ACTIVOS",
                     value = state.jugadoresActivos.toString(),
-                    trendText = "+12 este mes",
-                    trendColor = GreenTrend,
+                    trendText = "Registrados en el sistema",
+                    trendColor = TextMuted,
                     icon = Icons.Default.Group,
                     iconColor = PrimaryOrange
                 )
@@ -73,17 +70,17 @@ fun HomeScreen(
                 StatCard(
                     title = "ASISTENCIA PROMEDIO",
                     value = state.asistenciaPromedio,
-                    trendText = "Estable",
+                    trendText = "Este mes",
                     trendColor = TextMuted,
                     icon = Icons.Default.CalendarMonth,
                     iconColor = BlueIcon
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 StatCard(
-                    title = "INGRESOS JUL",
+                    title = "INGRESOS TOTALES",
                     value = state.ingresosMes,
-                    trendText = "+15% vs mes anterior",
-                    trendColor = GreenTrend,
+                    trendText = "Pagos recolectados",
+                    trendColor = SuccessGreen,
                     icon = Icons.Default.Payments,
                     iconColor = GreenTrend
                 )
@@ -170,7 +167,7 @@ private fun HomeTitleSection() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
-            onClick = { /* Acción para Nueva Acción */ },
+            onClick = { /* Acción futura */ },
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange),
             shape = RoundedCornerShape(24.dp),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
@@ -269,7 +266,7 @@ private fun FinancialChartCard() {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
-                val heights = listOf(0.4f, 0.6f, 0.5f, 1.0f, 0.7f, 0.8f) // Porcentajes de altura
+                val heights = listOf(0.4f, 0.6f, 0.5f, 1.0f, 0.7f, 0.8f)
                 heights.forEachIndexed { index, heightFactor ->
                     Box(
                         modifier = Modifier
@@ -304,32 +301,47 @@ private fun PendingPaymentsSection(pagos: List<Pago>) {
                     color = TextDark,
                     modifier = Modifier.weight(1f)
                 )
-                Box(
-                    modifier = Modifier
-                        .background(BadgeUrgentBg, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "Urgente",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = BadgeUrgentText
-                    )
+                if (pagos.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .background(BadgeUrgentBg, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "Urgente",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BadgeUrgentText
+                        )
+                    }
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
-            pagos.forEach { pago ->
-                PendingPaymentItemRow(pago)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DividerColor)
-            }
-            OutlinedButton(
-                onClick = { /* Ver todos */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Text("Ver todos", color = TextDark, fontWeight = FontWeight.Medium)
+
+            if (pagos.isEmpty()) {
+                Text(
+                    text = "¡Todo está al día! No hay cobros pendientes.",
+                    color = SuccessGreen,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                )
+            } else {
+                pagos.take(5).forEach { pago -> // Mostramos solo los primeros 5 para no saturar el inicio
+                    PendingPaymentItemRow(pago)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DividerColor)
+                }
+                OutlinedButton(
+                    onClick = { /* Navegar a una vista de todos los cobros si se desea a futuro */ },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("Ver todos los pendientes (${pagos.size})", color = TextDark, fontWeight = FontWeight.Medium)
+                }
             }
         }
     }
