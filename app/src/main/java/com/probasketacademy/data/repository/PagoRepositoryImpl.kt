@@ -22,4 +22,8 @@ class PagoRepositoryImpl @Inject constructor(private val pagoDao: PagoDao): Pago
         pagoDao.registrarPago(pago.toEntity())
         return pago.id ?: 0
     }
+
+    override fun obtenerIngresosTotales(): Flow<Double?> {
+        return pagoDao.obtenerIngresosTotales()
+    }
 }
