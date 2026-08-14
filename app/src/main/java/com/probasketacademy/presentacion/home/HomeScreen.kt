@@ -5,10 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -165,17 +165,6 @@ private fun HomeTitleSection() {
             fontSize = 14.sp,
             color = TextMuted
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { /* Acción futura */ },
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange),
-            shape = RoundedCornerShape(24.dp),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Nueva Acción", fontWeight = FontWeight.Bold)
-        }
     }
 }
 
@@ -329,12 +318,12 @@ private fun PendingPaymentsSection(pagos: List<Pago>) {
                     modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
                 )
             } else {
-                pagos.take(5).forEach { pago -> // Mostramos solo los primeros 5 para no saturar el inicio
+                pagos.take(5).forEach { pago ->
                     PendingPaymentItemRow(pago)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DividerColor)
                 }
                 OutlinedButton(
-                    onClick = { /* Navegar a una vista de todos los cobros si se desea a futuro */ },
+                    onClick = { /* Navegar a una vista de todos los cobros a futuro */ },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),

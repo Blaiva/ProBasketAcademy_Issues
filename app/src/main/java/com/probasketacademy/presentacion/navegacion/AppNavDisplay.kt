@@ -1,6 +1,6 @@
 package com.probasketacademy.presentacion.navegacion
 
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FactCheck
@@ -28,7 +28,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 
-// --- IMPORTACIONES DE TODAS TUS PANTALLAS ---
 import com.probasketacademy.presentacion.auth.AuthScreen
 import com.probasketacademy.presentacion.home.HomeScreen
 import com.probasketacademy.presentacion.jugadores.list.JugadoresListScreen
@@ -40,7 +39,6 @@ import com.probasketacademy.presentacion.eventos.EventosScreen
 import com.probasketacademy.presentacion.finanzas.list.PagosListScreen
 import com.probasketacademy.presentacion.finanzas.detalle.PagosDetalleScreen
 
-// --- IMPORTACIONES DE TU TEMA ---
 import com.probasketacademy.ui.theme.IndicatorColor
 import com.probasketacademy.ui.theme.PrimaryOrange
 import com.probasketacademy.ui.theme.TextMuted
@@ -54,8 +52,7 @@ data class BottomNavItem(
 
 @Composable
 fun AppNavDisplay(
-    backStack: NavBackStack<NavKey>,
-    innerPadding: PaddingValues
+    backStack: NavBackStack<NavKey>
 ) {
     val currentScreen = backStack.lastOrNull()
 
@@ -67,7 +64,7 @@ fun AppNavDisplay(
             currentScreen is Screen.Pagos
 
     Scaffold(
-        modifier = Modifier.padding(innerPadding),
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomBar) {
                 ProBasketBottomBar(backStack = backStack, currentScreen = currentScreen)
