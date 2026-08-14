@@ -19,6 +19,10 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,9 +59,11 @@ fun JugadorEditScreen(
     var tallaExpanded by remember { mutableStateOf(false) }
     var vinculoExpanded by remember { mutableStateOf(false) }
 
+    // Selector de imágenes de la galería
     val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             try {
+                // Mantiene el permiso de lectura de la imagen incluso si se cierra la app
                 context.contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -125,6 +131,7 @@ fun JugadorEditScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // --- SECCIÓN FOTO MODO EDICIÓN ---
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         contentAlignment = Alignment.Center
@@ -164,6 +171,7 @@ fun JugadorEditScreen(
                         }
                     }
 
+                    // ---------------------------------
                     Text("Información Personal", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 
                     OutlinedTextField(
@@ -197,6 +205,7 @@ fun JugadorEditScreen(
                             isError = state.edadError != null,
                             supportingText = state.edadError?.let { { Text(it) } }
                         )
+
                         OutlinedTextField(
                             value = state.telefono,
                             onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTelefonoChanged(it)) },
@@ -273,6 +282,7 @@ fun JugadorEditScreen(
                             isError = state.estaturaError != null,
                             supportingText = state.estaturaError?.let { { Text(it) } }
                         )
+
                         OutlinedTextField(
                             value = state.peso,
                             onValueChange = { viewModel.onEvent(JugadorEditEvent.OnPesoChanged(it)) },
@@ -407,7 +417,9 @@ fun JugadorEditScreen(
                                     colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
                                 )
                             }
+
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = BorderColor)
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -475,15 +487,16 @@ fun JugadorEditScreen(
                     }
                 }
             } else {
+                // --- MODO LECTURA DE FICHA DEL JUGADOR ---
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()), // AÑADIDO: Habilita el scroll
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
-                    // --- SECCIÓN FOTO MODO LECTURA (FICHA) ---
+                    // --- SECCIÓN FOTO ---
                     Box(modifier = Modifier.padding(top = 16.dp)) {
                         Box(
                             modifier = Modifier
@@ -530,7 +543,6 @@ fun JugadorEditScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-
                     Text(text = state.nombre, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
                     Text(
                         text = "Talla: ${state.tallaCamiseta.ifEmpty { "No asignada" }}",
@@ -539,7 +551,6 @@ fun JugadorEditScreen(
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         val isActive = state.estado.equals("Activo", ignoreCase = true)
                         AssistChip(
@@ -562,16 +573,83 @@ fun JugadorEditScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // --- DATOS FÍSICOS Y DEPORTIVOS ---
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            InfoCard(modifier = Modifier.weight(1f), title = "CATEGORÍA", value = state.categoriaNombre, subtitle = "Asignada")
+                            InfoCard(modifier = Modifier.weight(1f), title = "CATEGORÍA", value = state.categoriaNombre.ifEmpty { "N/A" }, subtitle = "Asignada")
                             InfoCard(modifier = Modifier.weight(1f), title = "FÍSICO", value = "${state.estatura} m", subtitle = "${state.peso} kg")
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             InfoCard(modifier = Modifier.weight(1f), title = "EDAD", value = "${state.edad} años", subtitle = "Registrada")
-                            InfoCard(modifier = Modifier.weight(1f), title = "CONTACTO", value = state.telefono.ifEmpty { "N/A" }, subtitle = "Principal")
+                            InfoCard(modifier = Modifier.weight(1f), title = "TELÉFONO", value = state.telefono.ifEmpty { "N/A" }, subtitle = "Personal")
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- SECCIÓN DOMICILIO ---
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text("Ubicación", fontWeight = FontWeight.Bold, color = PrimaryOrange, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.LocationOn, contentDescription = null, tint = TextMuted, modifier = Modifier.size(22.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(text = state.domicilio.ifEmpty { "No registrado" }, fontSize = 15.sp, color = TextDark)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // --- SECCIÓN TUTOR LEGAL ---
+                        Text("Información del Tutor / Responsable", fontWeight = FontWeight.Bold, color = PrimaryOrange, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier.size(40.dp).background(IndicatorColor, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Person, contentDescription = null, tint = HeaderOrange, modifier = Modifier.size(20.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(text = state.tutorNombre.ifEmpty { "No registrado" }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                        Text(text = state.tutorVinculo.ifEmpty { "Vínculo no definido" }, fontSize = 13.sp, color = TextMuted)
+                                    }
+                                }
+
+                                HorizontalDivider(color = DividerColor)
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Phone, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(text = state.tutorTelefono.ifEmpty { "No registrado" }, fontSize = 15.sp, color = TextDark)
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Email, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(text = state.tutorCorreo.ifEmpty { "No registrado" }, fontSize = 15.sp, color = TextDark)
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
