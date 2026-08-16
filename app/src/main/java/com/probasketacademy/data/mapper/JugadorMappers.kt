@@ -21,7 +21,14 @@ fun JugadorEntity.toDomain(): Jugador = Jugador(
     tutorCorreo = tutorCorreo,
     estado = estado,
     docCompleta = docCompleta,
-    fotoUri = fotoUri
+    fotoUri = fotoUri,
+    tipoInscripcion = tipoInscripcion,
+    fechaInicio = fechaInicio,
+    fechaVencimiento = fechaVencimiento,
+    cuota = cuota,
+    totalGenerado = totalGenerado,
+    totalPagado = totalPagado,
+    deudaActual = deudaActual
 )
 
 fun Jugador.toEntity(): JugadorEntity = JugadorEntity(
@@ -41,7 +48,14 @@ fun Jugador.toEntity(): JugadorEntity = JugadorEntity(
     tutorCorreo = tutorCorreo,
     estado = estado,
     docCompleta = docCompleta,
-    fotoUri = fotoUri
+    fotoUri = fotoUri,
+    tipoInscripcion = tipoInscripcion,
+    fechaInicio = fechaInicio,
+    fechaVencimiento = fechaVencimiento,
+    cuota = cuota,
+    totalGenerado = totalGenerado,
+    totalPagado = totalPagado,
+    deudaActual = deudaActual
 )
 
 fun JugadorConCategoriaDto.toDomain(): Jugador = Jugador(
@@ -62,5 +76,12 @@ fun JugadorConCategoriaDto.toDomain(): Jugador = Jugador(
     estado = estado,
     docCompleta = docCompleta,
     fotoUri = fotoUri,
-    categoriaNombre = categoriaNombre ?: "Sin Categoría"
+    categoriaNombre = categoriaNombre ?: "Sin Categoría",
+    tipoInscripcion = tipoInscripcion,
+    fechaInicio = fechaInicio,
+    fechaVencimiento = fechaVencimiento,
+    cuota = cuota,
+    totalGenerado = totalGenerado,
+    totalPagado = totalPagado,
+    deudaActual = deudaActual
 )
