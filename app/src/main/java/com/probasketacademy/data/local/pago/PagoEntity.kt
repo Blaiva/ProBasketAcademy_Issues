@@ -23,7 +23,9 @@ data class PagoEntity(
     val id: Long = 0,
     val jugadorId: Long,
     val concepto: String,
-    val monto: Double,
+    val montoTotal: Double,
+    val montoPagado: Double,
+    val deuda: Double,
     val fecha: String,
     val estado: String
 )
