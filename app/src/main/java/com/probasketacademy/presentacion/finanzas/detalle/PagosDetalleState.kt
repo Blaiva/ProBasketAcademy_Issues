@@ -9,5 +9,19 @@ data class PagosDetalleState(
     val saldoPendiente: Double = 0.0,
     val pagos: List<Pago> = emptyList(),
     val showPagoDialog: Boolean = false,
+    val showAbonoDialog: Boolean = false,
+    val selectedPagoParaAbono: Pago? = null,
+    
+    // Inputs para Registrar Pago
+    val conceptoInput: String = "",
+    val montoTotalInput: String = "",
+    val montoAbonadoInput: String = "",
+    
+    // Nuevos campos para inscripción/vencimiento
+    val tipoInscripcion: String = "Mensual",
+    val fechaInicio: String = "",
+    val fechaVencimiento: String = "",
+
+    val montoNuevoAbonoInput: String = "",
     val errorMessage: String? = null
 )
