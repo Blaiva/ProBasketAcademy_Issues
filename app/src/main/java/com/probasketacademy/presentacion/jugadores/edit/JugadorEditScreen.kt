@@ -384,17 +384,6 @@ fun JugadorEditScreen(
                         }
                     }
 
-                    OutlinedTextField(
-                        value = state.tutorCorreo,
-                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorCorreoChanged(it)) },
-                        label = { Text("Correo del Tutor") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        isError = state.tutorCorreoError != null,
-                        supportingText = state.tutorCorreoError?.let { { Text(it) } }
-                    )
-
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Estado y Documentación", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 

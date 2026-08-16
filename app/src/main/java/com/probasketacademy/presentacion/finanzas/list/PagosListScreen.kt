@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Jugador
-import com.probasketacademy.presentacion.finanzas.list.PagosListEvent
 import com.probasketacademy.ui.theme.*
 
 @Composable
@@ -67,7 +66,25 @@ fun PagosListScreen(
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text("Finanzas y Pagos", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Selecciona un jugador para gestionar sus cuotas.", fontSize = 13.sp, color = TextMuted)
+                Text("Monitorea los ingresos de la academia y las deudas.", fontSize = 13.sp, color = TextMuted)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = HeaderOrange.copy(alpha = 0.1f)),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        FinancialColumn(label = "Generado", amount = state.totalGeneradoGlobal, color = TextDark)
+                        FinancialColumn(label = "Pagado", amount = state.totalPagadoGlobal, color = Color(0xFF4CAF50))
+                        FinancialColumn(label = "Deuda Global", amount = state.deudaGlobal, color = if (state.deudaGlobal > 0) Color(0xFFF44336) else TextMuted)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -89,7 +106,6 @@ fun PagosListScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // LISTA DE JUGADORES
             if (state.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = HeaderOrange) }
             } else {
@@ -104,25 +120,55 @@ fun PagosListScreen(
                             shape = RoundedCornerShape(16.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier.size(48.dp).background(BorderColor, CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) { Text(jugador.nombre.take(1).uppercase(), fontWeight = FontWeight.Bold, color = TextDark, fontSize = 18.sp) }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
-                                    Text("${jugador.categoriaNombre}   #${jugador.numeroCamiseta}", fontSize = 12.sp, color = TextMuted)
+                            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(48.dp).background(BorderColor, CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) { Text(if (jugador.nombre.isNotEmpty()) jugador.nombre.take(1).uppercase() else "?", fontWeight = FontWeight.Bold, color = TextDark, fontSize = 18.sp) }
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
+                                        Text("${jugador.categoriaNombre}   #${jugador.numeroCamiseta}", fontSize = 12.sp, color = TextMuted)
+                                    }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ChevronColor)
                                 }
-                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ChevronColor)
+
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Divider(color = BorderColor, thickness = 0.5.dp)
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    FinancialColumn(label = "Generado", amount = jugador.totalGenerado, color = TextMuted)
+                                    FinancialColumn(label = "Pagado", amount = jugador.totalPagado, color = Color(0xFF4CAF50))
+                                    FinancialColumn(label = "Deuda", amount = jugador.deudaActual, color = if (jugador.deudaActual > 0) Color(0xFFF44336) else TextMuted)
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FinancialColumn(label: String, amount: Double, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = label, fontSize = 11.sp, color = TextMuted)
+        Text(
+            text = "$$amount",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
     }
 }

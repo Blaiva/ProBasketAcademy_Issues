@@ -15,7 +15,9 @@ interface PagoDao {
             p.id AS pagoId,
             p.jugadorId AS jugadorId,
             p.concepto AS concepto,
-            p.monto AS monto,
+            p.montoTotal AS montoTotal,
+            p.montoPagado AS montoPagado,
+            p.deuda AS deuda,
             p.fecha AS fecha,
             p.estado AS estado,
             j.nombre AS jugadorNombre,
@@ -32,22 +34,23 @@ interface PagoDao {
             p.id AS pagoId,
             p.jugadorId AS jugadorId,
             p.concepto AS concepto,
-            p.monto AS monto,
+            p.montoTotal AS montoTotal,
+            p.montoPagado AS montoPagado,
+            p.deuda AS deuda,
             p.fecha AS fecha,
             p.estado AS estado,
             j.nombre AS jugadorNombre,
             j.numeroCamiseta AS numeroCamiseta
         FROM pagos p
         INNER JOIN jugadores j ON p.jugadorId = j.jugadorId
-        WHERE p.estado = 'PENDIENTE'
+        WHERE p.estado = 'PENDIENTE' OR p.estado = 'ABONADO'
         ORDER BY p.id DESC
     """)
     fun obtenerCobrosPendientes(): Flow<List<PagoConJugadorDto>>
 
     @Query("""
-        SELECT SUM(monto) 
+        SELECT SUM(montoPagado) 
         FROM pagos 
-        WHERE estado = 'PAGADO'
     """)
     fun obtenerIngresosTotales(): Flow<Double?>
 }

@@ -18,5 +18,12 @@ data class Jugador(
     val estado: String = "Activo",
     val docCompleta: Boolean = true,
     val fotoUri: String? = null,
-    val categoriaNombre: String = ""
+    val categoriaNombre: String = "",
+    val tipoInscripcion: String = "Mensual",
+    val fechaInicio: String = "",
+    val fechaVencimiento: String = "",
+    val cuota: Double = 0.0,
+    val totalGenerado: Double = 0.0,
+    val totalPagado: Double = 0.0,
+    val deudaActual: Double = 0.0
 )
