@@ -18,6 +18,12 @@ data class JugadorConCategoriaDto(
     val estado: String,
     val docCompleta: Boolean,
     val fotoUri: String?,
-
-    val categoriaNombre: String?
+    val categoriaNombre: String?,
+    val tipoInscripcion: String,
+    val fechaInicio: String,
+    val fechaVencimiento: String,
+    val cuota: Double,
+    val totalGenerado: Double,
+    val totalPagado: Double,
+    val deudaActual: Double
 )
