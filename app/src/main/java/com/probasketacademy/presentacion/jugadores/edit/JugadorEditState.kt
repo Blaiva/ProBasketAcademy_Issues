@@ -1,8 +1,6 @@
 package com.probasketacademy.presentacion.jugadores.edit
 
-import com.probasketacademy.data.local.categoria.CategoriaConConteoDto
 import com.probasketacademy.domain.model.Categoria
-import com.probasketacademy.domain.model.Jugador
 
 data class JugadorEditState(
     val isLoading: Boolean = false,
@@ -31,6 +29,7 @@ data class JugadorEditState(
     val fotoUri: String? = null,
     val categoriaNombre: String = "",
     val categorias: List<Categoria> = emptyList(),
+
     val nombreError: String? = null,
     val telefonoError: String? = null,
     val edadError: String? = null,
