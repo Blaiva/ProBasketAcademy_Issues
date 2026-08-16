@@ -1,27 +1,11 @@
 package com.probasketacademy.presentacion.jugadores.edit
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.repository.JugadorRepository
 import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriasConConteoUseCase
-import com.probasketacademy.domain.usecase.jugadores.EliminarJugadorUseCase
-import com.probasketacademy.domain.usecase.jugadores.GuardarJugadorUseCase
-import com.probasketacademy.domain.usecase.jugadores.ObtenerJugadorPorIdUseCase
-import com.probasketacademy.domain.usecase.jugadores.validarDomicilioJugador
-import com.probasketacademy.domain.usecase.jugadores.validarEdadJugador
-import com.probasketacademy.domain.usecase.jugadores.validarEstadoJugador
-import com.probasketacademy.domain.usecase.jugadores.validarEstaturaJugador
-import com.probasketacademy.domain.usecase.jugadores.validarNombreJugador
-import com.probasketacademy.domain.usecase.jugadores.validarNumeroCamisetaJugador
-import com.probasketacademy.domain.usecase.jugadores.validarPesoJugador
-import com.probasketacademy.domain.usecase.jugadores.validarTallaCamisetaJugador
-import com.probasketacademy.domain.usecase.jugadores.validarTelefonoJugador
-import com.probasketacademy.domain.usecase.jugadores.validarTutorCorreoJugador
-import com.probasketacademy.domain.usecase.jugadores.validarTutorNombreJugador
-import com.probasketacademy.domain.usecase.jugadores.validarTutorTelefonoJugador
-import com.probasketacademy.domain.usecase.jugadores.validarTutorVinculoJugador
+import com.probasketacademy.domain.usecase.jugadores.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -60,6 +44,7 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value) }
             is JugadorEditEvent.OnDocCompletaChanged -> _uiState.update { it.copy(docCompleta = event.value) }
             is JugadorEditEvent.OnFotoChanged -> _uiState.update { it.copy(fotoUri = event.uri) }
+            
             is JugadorEditEvent.OnGuardarClicked -> onGuardar()
             is JugadorEditEvent.OnEliminarClicked -> onEliminar()
         }
@@ -74,29 +59,10 @@ class JugadorEditViewModel @Inject constructor(
     }
 
     fun cargarJugador(id: Long) {
-        if (id == 0L) {
-            _uiState.update {
-                JugadorEditState(
-                    isNew = true,
-                    jugadorId = 0L,
-                    isSaved = false,
-                    isDeleted = false,
-                    isLoading = false,
-                    errorMessage = null
-                )
-            }
-            return
-        }
+        if (id == 0L) return
 
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isLoading = true,
-                    isSaved = false,
-                    isDeleted = false,
-                    errorMessage = null
-                )
-            }
+            _uiState.update { it.copy(isLoading = true, isSaved = false, isDeleted = false, errorMessage = null) }
             obtenerJugadorPorIdUseCase(id)
                 .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
                 .collect { jugador ->
@@ -192,6 +158,8 @@ class JugadorEditViewModel @Inject constructor(
                 docCompleta = currentState.docCompleta,
                 fotoUri = currentState.fotoUri,
                 categoriaNombre = currentState.categoriaNombre
+                // Los campos de finanzas/inscripción se mantienen con sus valores por defecto
+                // si es nuevo, o no se sobrescriben si el caso de uso es inteligente.
             )
 
             val result = guardarJugadorUseCase(jugador)
