@@ -3,7 +3,6 @@ package com.probasketacademy.presentacion.finanzas.list
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.repository.JugadorRepository
-import com.probasketacademy.presentacion.finanzas.list.PagosListEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -33,17 +32,44 @@ class PagosListViewModel @Inject constructor(
     private fun cargarJugadores() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            jugadorRepository.obtenerJugadores() // Usamos el repositorio existente
+            jugadorRepository.obtenerJugadores()
                 .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
-                .collect { lista -> _uiState.update { it.copy(isLoading = false, jugadores = lista) } }
+                .collect { lista ->
+                    val generadoGlobal = lista.sumOf { it.totalGenerado }
+                    val pagadoGlobal = lista.sumOf { it.totalPagado }
+                    val deudaGlobal = lista.sumOf { it.deudaActual }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            jugadores = lista,
+                            totalGeneradoGlobal = generadoGlobal,
+                            totalPagadoGlobal = pagadoGlobal,
+                            deudaGlobal = deudaGlobal
+                        )
+                    }
+                }
         }
     }
 
     private fun buscarJugadores(query: String) {
         viewModelScope.launch {
-            jugadorRepository.buscarJugadores(query) // Búsqueda nativa desde tu Room DB[cite: 8]
+            jugadorRepository.buscarJugadores(query)
                 .catch { e -> _uiState.update { it.copy(errorMessage = e.message) } }
-                .collect { lista -> _uiState.update { it.copy(jugadores = lista) } }
+                .collect { lista ->
+                    val generadoGlobal = lista.sumOf { it.totalGenerado }
+                    val pagadoGlobal = lista.sumOf { it.totalPagado }
+                    val deudaGlobal = lista.sumOf { it.deudaActual }
+
+                    _uiState.update {
+                        it.copy(
+                            jugadores = lista,
+                            totalGeneradoGlobal = generadoGlobal,
+                            totalPagadoGlobal = pagadoGlobal,
+                            deudaGlobal = deudaGlobal
+                        )
+                    }
+                }
         }
     }
 }
