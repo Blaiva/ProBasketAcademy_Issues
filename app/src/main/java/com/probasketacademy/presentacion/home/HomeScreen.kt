@@ -358,7 +358,7 @@ private fun PendingPaymentItemRow(pago: Pago) {
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "$${pago.monto.toInt()}",
+                text = "$${pago.montoTotal.toInt()}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = PrimaryOrange
