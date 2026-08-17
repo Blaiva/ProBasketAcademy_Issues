@@ -72,6 +72,18 @@ class PagosDetalleViewModel @Inject constructor(
             is PagosDetalleEvent.OnMarcarComoPagado -> {
                 marcarComoPagado(event.pago)
             }
+            is PagosDetalleEvent.OnToggleSaldarConfirmDialog -> {
+                _uiState.update {
+                    it.copy(
+                        showSaldarConfirmDialog = !it.showSaldarConfirmDialog,
+                        pagoParaSaldar = event.pago
+                    )
+                }
+            }
+            is PagosDetalleEvent.OnConfirmarSaldar -> {
+                _uiState.value.pagoParaSaldar?.let { marcarComoPagado(it) }
+                _uiState.update { it.copy(showSaldarConfirmDialog = false, pagoParaSaldar = null) }
+            }
         }
     }
 
