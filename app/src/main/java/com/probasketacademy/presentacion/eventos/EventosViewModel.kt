@@ -47,6 +47,19 @@ class EventosViewModel @Inject constructor(
             is EventosEvent.OnGuardarEvento -> {
                 guardarEvento(event)
             }
+            is EventosEvent.OnEventoClicked -> {
+                _uiState.update { it.copy(eventoSeleccionado = event.evento, showEditDialog = true) }
+            }
+            is EventosEvent.OnToggleEditDialog -> {
+                _uiState.update {
+                    it.copy(
+                        showEditDialog = !it.showEditDialog,
+                        eventoSeleccionado = if (it.showEditDialog) null else it.eventoSeleccionado
+                    )
+                }
+            }
+            is EventosEvent.OnActualizarEvento -> actualizarEvento(event)
+            is EventosEvent.OnEliminarEvento -> eliminarEvento()
         }
     }
 
@@ -103,6 +116,37 @@ class EventosViewModel @Inject constructor(
             eventoRepository.guardarEvento(nuevoEvento)
             _uiState.update { it.copy(showAddDialog = false) }
             cargarEventosDelDia(selectedDate)
+            cargarEventosDelMes(_uiState.value.currentYearMonth)
+        }
+    }
+
+    private fun actualizarEvento(event: EventosEvent.OnActualizarEvento) {
+        val eventoActual = _uiState.value.eventoSeleccionado ?: return
+        viewModelScope.launch {
+            val dateTime = LocalDateTime.of(_uiState.value.selectedDate, event.time)
+            val epochMs = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+            val eventoActualizado = eventoActual.copy(
+                titulo = event.titulo,
+                tipo = event.tipo,
+                fechaHoraEpocaMs = epochMs,
+                duracionHoras = event.duracion,
+                lugar = event.lugar
+            )
+
+            eventoRepository.guardarEvento(eventoActualizado)
+            _uiState.update { it.copy(showEditDialog = false, eventoSeleccionado = null) }
+            cargarEventosDelDia(_uiState.value.selectedDate)
+            cargarEventosDelMes(_uiState.value.currentYearMonth)
+        }
+    }
+
+    private fun eliminarEvento() {
+        val evento = _uiState.value.eventoSeleccionado ?: return
+        viewModelScope.launch {
+            eventoRepository.eliminarEvento(evento.id)
+            _uiState.update { it.copy(showEditDialog = false, eventoSeleccionado = null) }
+            cargarEventosDelDia(_uiState.value.selectedDate)
             cargarEventosDelMes(_uiState.value.currentYearMonth)
         }
     }
