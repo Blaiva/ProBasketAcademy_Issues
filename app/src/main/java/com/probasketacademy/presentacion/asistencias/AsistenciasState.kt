@@ -1,12 +1,15 @@
 package com.probasketacademy.presentacion.asistencias
 
+import com.probasketacademy.domain.model.Categoria
 import com.probasketacademy.domain.model.Jugador
 import java.time.LocalDate
 import java.time.YearMonth
 
 data class AsistenciasState(
     val isLoading: Boolean = false,
-    val categoriaNombre: String = "General",
+    val categorias: List<Categoria> = emptyList(),
+    val categoriaSeleccionadaId: Long? = null,
+    val categoriaSeleccionadaNombre: String = "Selecciona una categoría",
     val jugadores: List<Jugador> = emptyList(),
     val asistencias: Map<Long, Boolean> = emptyMap(),
     val selectedDate: LocalDate = LocalDate.now(),

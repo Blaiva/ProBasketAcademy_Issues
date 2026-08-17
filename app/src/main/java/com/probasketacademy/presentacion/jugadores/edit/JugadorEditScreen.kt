@@ -534,16 +534,6 @@ fun JugadorEditScreen(
                             }
                         }
                     }
-
-                    if (!state.isNew) {
-                        OutlinedButton(
-                            onClick = { isEditing = false },
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Cancelar Edición", color = TextDark)
-                        }
-                    }
                 }
             } else {
                 // --- MODO LECTURA DE FICHA DEL JUGADOR ---
