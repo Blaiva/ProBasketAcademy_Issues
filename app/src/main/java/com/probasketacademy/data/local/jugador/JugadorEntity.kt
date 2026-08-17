@@ -37,6 +37,8 @@ data class JugadorEntity(
     val estado: String = "Activo",
     val docCompleta: Boolean = true,
     val fotoUri: String? = null,
+
+    // --- Campos Ocultos para Finanzas ---
     val tipoInscripcion: String = "Mensual",
     val fechaInicio: String = "",
     val fechaVencimiento: String = "",

@@ -59,11 +59,9 @@ fun JugadorEditScreen(
     var tallaExpanded by remember { mutableStateOf(false) }
     var vinculoExpanded by remember { mutableStateOf(false) }
 
-    // Selector de imágenes de la galería
     val pickMedia = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             try {
-                // Mantiene el permiso de lectura de la imagen incluso si se cierra la app
                 context.contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -131,7 +129,6 @@ fun JugadorEditScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // --- SECCIÓN FOTO MODO EDICIÓN ---
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         contentAlignment = Alignment.Center
@@ -171,7 +168,6 @@ fun JugadorEditScreen(
                         }
                     }
 
-                    // ---------------------------------
                     Text("Información Personal", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 
                     OutlinedTextField(
@@ -384,6 +380,17 @@ fun JugadorEditScreen(
                         }
                     }
 
+                    OutlinedTextField(
+                        value = state.tutorCorreo,
+                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorCorreoChanged(it)) },
+                        label = { Text("Correo del Tutor") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        isError = state.tutorCorreoError != null,
+                        supportingText = state.tutorCorreoError?.let { { Text(it) } }
+                    )
+
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Estado y Documentación", fontWeight = FontWeight.Bold, color = PrimaryOrange)
 
@@ -482,10 +489,9 @@ fun JugadorEditScreen(
                         .fillMaxSize()
                         .padding(padding)
                         .padding(16.dp)
-                        .verticalScroll(rememberScrollState()), // AÑADIDO: Habilita el scroll
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // --- SECCIÓN FOTO ---
                     Box(modifier = Modifier.padding(top = 16.dp)) {
                         Box(
                             modifier = Modifier
@@ -562,7 +568,6 @@ fun JugadorEditScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // --- DATOS FÍSICOS Y DEPORTIVOS ---
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             InfoCard(modifier = Modifier.weight(1f), title = "CATEGORÍA", value = state.categoriaNombre.ifEmpty { "N/A" }, subtitle = "Asignada")
@@ -576,7 +581,6 @@ fun JugadorEditScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // --- SECCIÓN DOMICILIO ---
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.Start
@@ -598,7 +602,6 @@ fun JugadorEditScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // --- SECCIÓN TUTOR LEGAL ---
                         Text("Información del Tutor / Responsable", fontWeight = FontWeight.Bold, color = PrimaryOrange, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(

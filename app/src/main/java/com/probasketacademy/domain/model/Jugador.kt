@@ -19,6 +19,8 @@ data class Jugador(
     val docCompleta: Boolean = true,
     val fotoUri: String? = null,
     val categoriaNombre: String = "",
+
+    // --- Campos Ocultos para Finanzas ---
     val tipoInscripcion: String = "Mensual",
     val fechaInicio: String = "",
     val fechaVencimiento: String = "",

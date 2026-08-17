@@ -44,7 +44,7 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value) }
             is JugadorEditEvent.OnDocCompletaChanged -> _uiState.update { it.copy(docCompleta = event.value) }
             is JugadorEditEvent.OnFotoChanged -> _uiState.update { it.copy(fotoUri = event.uri) }
-            
+
             is JugadorEditEvent.OnGuardarClicked -> onGuardar()
             is JugadorEditEvent.OnEliminarClicked -> onEliminar()
         }
@@ -59,7 +59,19 @@ class JugadorEditViewModel @Inject constructor(
     }
 
     fun cargarJugador(id: Long) {
-        if (id == 0L) return
+        if (id == 0L) {
+            _uiState.update {
+                JugadorEditState(
+                    isNew = true,
+                    jugadorId = 0L,
+                    isSaved = false,
+                    isDeleted = false,
+                    isLoading = false,
+                    errorMessage = null
+                )
+            }
+            return
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, isSaved = false, isDeleted = false, errorMessage = null) }
@@ -88,7 +100,15 @@ class JugadorEditViewModel @Inject constructor(
                                 estado = jugador.estado,
                                 docCompleta = jugador.docCompleta,
                                 fotoUri = jugador.fotoUri,
-                                categoriaNombre = jugador.categoriaNombre
+                                categoriaNombre = jugador.categoriaNombre,
+
+                                tipoInscripcion = jugador.tipoInscripcion,
+                                fechaInicio = jugador.fechaInicio,
+                                fechaVencimiento = jugador.fechaVencimiento,
+                                cuota = jugador.cuota,
+                                totalGenerado = jugador.totalGenerado,
+                                totalPagado = jugador.totalPagado,
+                                deudaActual = jugador.deudaActual
                             )
                         }
                     }
@@ -157,9 +177,15 @@ class JugadorEditViewModel @Inject constructor(
                 estado = currentState.estado,
                 docCompleta = currentState.docCompleta,
                 fotoUri = currentState.fotoUri,
-                categoriaNombre = currentState.categoriaNombre
-                // Los campos de finanzas/inscripción se mantienen con sus valores por defecto
-                // si es nuevo, o no se sobrescriben si el caso de uso es inteligente.
+                categoriaNombre = currentState.categoriaNombre,
+
+                tipoInscripcion = currentState.tipoInscripcion,
+                fechaInicio = currentState.fechaInicio,
+                fechaVencimiento = currentState.fechaVencimiento,
+                cuota = currentState.cuota,
+                totalGenerado = currentState.totalGenerado,
+                totalPagado = currentState.totalPagado,
+                deudaActual = currentState.deudaActual
             )
 
             val result = guardarJugadorUseCase(jugador)
