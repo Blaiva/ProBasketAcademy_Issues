@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
@@ -70,6 +72,20 @@ fun JugadorEditScreen(
                 e.printStackTrace()
             }
             viewModel.onEvent(JugadorEditEvent.OnFotoChanged(uri.toString()))
+        }
+    }
+
+    val pickMediaActa = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            viewModel.onEvent(JugadorEditEvent.OnActaNacimientoChanged(uri.toString()))
         }
     }
 
@@ -416,17 +432,64 @@ fun JugadorEditScreen(
 
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = BorderColor)
 
+                            // --- CAMPO ACTA DE NACIMIENTO ---
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        pickMediaActa.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Documentación Completa", color = TextDark, fontWeight = FontWeight.Medium)
-                                Switch(
-                                    checked = state.docCompleta,
-                                    onCheckedChange = { viewModel.onEvent(JugadorEditEvent.OnDocCompletaChanged(it)) },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(LightBackground),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (!state.actaNacimientoUri.isNullOrEmpty()) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(context)
+                                                .data(state.actaNacimientoUri)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = "Acta de nacimiento",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.AddAPhoto,
+                                            contentDescription = "Subir acta de nacimiento",
+                                            tint = TextMuted,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Acta de Nacimiento", color = TextDark, fontWeight = FontWeight.Medium)
+                                    Text(
+                                        text = if (!state.actaNacimientoUri.isNullOrEmpty())
+                                            "Documento cargado"
+                                        else
+                                            "Toca para subir el documento",
+                                        fontSize = 12.sp,
+                                        color = if (!state.actaNacimientoUri.isNullOrEmpty()) SuccessGreen else TextMuted
+                                    )
+                                }
+
+                                if (!state.actaNacimientoUri.isNullOrEmpty()) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = SuccessGreen,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
