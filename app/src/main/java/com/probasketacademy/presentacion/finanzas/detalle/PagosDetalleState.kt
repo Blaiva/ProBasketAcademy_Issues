@@ -23,5 +23,8 @@ data class PagosDetalleState(
     val fechaVencimiento: String = "",
 
     val montoNuevoAbonoInput: String = "",
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+
+    val showSaldarConfirmDialog: Boolean = false,
+    val pagoParaSaldar: Pago? = null,
 )
