@@ -18,9 +18,8 @@ data class JugadorConCategoriaDto(
     val estado: String,
     val docCompleta: Boolean,
     val fotoUri: String?,
+    val actaNacimientoUri: String?,
     val categoriaNombre: String?,
-
-    // --- Campos Ocultos para Finanzas ---
     val tipoInscripcion: String,
     val fechaInicio: String,
     val fechaVencimiento: String,
