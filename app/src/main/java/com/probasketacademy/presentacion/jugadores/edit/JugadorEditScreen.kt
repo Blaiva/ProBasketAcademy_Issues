@@ -704,6 +704,55 @@ fun JugadorEditScreen(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text("Documentación", fontWeight = FontWeight.Bold, color = PrimaryOrange, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Acta de Nacimiento", fontSize = 13.sp, color = TextMuted, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (!state.actaNacimientoUri.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context)
+                                            .data(state.actaNacimientoUri)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "Acta de nacimiento",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(200.dp)
+                                            .clip(RoundedCornerShape(12.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(120.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(LightBackground),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = TextMuted, modifier = Modifier.size(28.dp))
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text("Documento no cargado", color = TextMuted, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
