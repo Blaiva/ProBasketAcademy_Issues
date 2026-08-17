@@ -103,7 +103,7 @@ fun CategoriasListScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(bottom = padding.calculateBottomPadding())
         ) {
             Box(
                 modifier = Modifier

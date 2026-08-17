@@ -123,7 +123,7 @@ fun EventosScreen(
         containerColor = LightBackground
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
             contentPadding = PaddingValues(bottom = 88.dp)
         ) {
             item {

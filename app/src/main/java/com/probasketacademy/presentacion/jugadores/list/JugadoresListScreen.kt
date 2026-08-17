@@ -57,7 +57,7 @@ fun JugadoresListScreen(
         },
         containerColor = LightBackground
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -31,7 +31,6 @@ class HomeViewModel @Inject constructor(
 
     private fun cargarDatosDelDashboard() {
         _uiState.update { it.copy(isLoading = true) }
-
         val yearMonth = YearMonth.now()
         val inicioMes =
             yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -39,7 +38,6 @@ class HomeViewModel @Inject constructor(
             .toInstant().toEpochMilli()
 
         viewModelScope.launch {
-            // 1. Cargar Total de Jugadores Activos
             jugadorRepository.obtenerJugadores().collectLatest { jugadores ->
                 val activos = jugadores.count { it.estado.equals("Activo", ignoreCase = true) }
                 _uiState.update { it.copy(jugadoresActivos = activos) }
@@ -65,7 +63,6 @@ class HomeViewModel @Inject constructor(
                 val ingresos = total ?: 0.0
                 val formatoMoneda = NumberFormat.getNumberInstance(Locale("es", "DO"))
                 val ingresoStr = "$${formatoMoneda.format(ingresos)}"
-
                 _uiState.update {
                     it.copy(isLoading = false, ingresosMes = ingresoStr)
                 }
