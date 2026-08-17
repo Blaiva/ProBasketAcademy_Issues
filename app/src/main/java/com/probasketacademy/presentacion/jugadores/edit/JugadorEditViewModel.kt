@@ -42,8 +42,13 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnTutorVinculoChanged -> _uiState.update { it.copy(tutorVinculo = event.value, tutorVinculoError = null) }
             is JugadorEditEvent.OnTutorCorreoChanged -> _uiState.update { it.copy(tutorCorreo = event.value, tutorCorreoError = null) }
             is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value) }
-            is JugadorEditEvent.OnDocCompletaChanged -> _uiState.update { it.copy(docCompleta = event.value) }
             is JugadorEditEvent.OnFotoChanged -> _uiState.update { it.copy(fotoUri = event.uri) }
+            is JugadorEditEvent.OnActaNacimientoChanged -> _uiState.update {
+                it.copy(
+                    actaNacimientoUri = event.uri,
+                    docCompleta = !event.uri.isNullOrEmpty()
+                )
+            }
 
             is JugadorEditEvent.OnGuardarClicked -> onGuardar()
             is JugadorEditEvent.OnEliminarClicked -> onEliminar()
@@ -98,10 +103,10 @@ class JugadorEditViewModel @Inject constructor(
                                 tutorVinculo = jugador.tutorVinculo,
                                 tutorCorreo = jugador.tutorCorreo,
                                 estado = jugador.estado,
-                                docCompleta = jugador.docCompleta,
                                 fotoUri = jugador.fotoUri,
+                                actaNacimientoUri = jugador.actaNacimientoUri,
+                                docCompleta = !jugador.actaNacimientoUri.isNullOrEmpty(),
                                 categoriaNombre = jugador.categoriaNombre,
-
                                 tipoInscripcion = jugador.tipoInscripcion,
                                 fechaInicio = jugador.fechaInicio,
                                 fechaVencimiento = jugador.fechaVencimiento,
@@ -175,17 +180,10 @@ class JugadorEditViewModel @Inject constructor(
                 tutorVinculo = currentState.tutorVinculo,
                 tutorCorreo = currentState.tutorCorreo,
                 estado = currentState.estado,
-                docCompleta = currentState.docCompleta,
+                docCompleta = !currentState.actaNacimientoUri.isNullOrEmpty(),
                 fotoUri = currentState.fotoUri,
-                categoriaNombre = currentState.categoriaNombre,
-
-                tipoInscripcion = currentState.tipoInscripcion,
-                fechaInicio = currentState.fechaInicio,
-                fechaVencimiento = currentState.fechaVencimiento,
-                cuota = currentState.cuota,
-                totalGenerado = currentState.totalGenerado,
-                totalPagado = currentState.totalPagado,
-                deudaActual = currentState.deudaActual
+                actaNacimientoUri = currentState.actaNacimientoUri,
+                categoriaNombre = currentState.categoriaNombre
             )
 
             val result = guardarJugadorUseCase(jugador)
