@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -77,17 +76,13 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 StatCard(
-                    title = "INGRESOS TOTALES",
+                    title = "INGRESOS DEL AÑO",
                     value = state.ingresosMes,
-                    trendText = "Pagos recolectados",
+                    trendText = "Total acumulado anual",
                     trendColor = SuccessGreen,
                     icon = Icons.Default.Payments,
                     iconColor = GreenTrend
                 )
-            }
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                FinancialChartCard()
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -220,51 +215,6 @@ private fun StatCard(
                     fontWeight = FontWeight.Medium,
                     color = trendColor
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FinancialChartCard() {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Evolución de Finanzas",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextDark
-                )
-                Icon(Icons.Default.MoreHoriz, contentDescription = null, tint = TextMuted)
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                val heights = listOf(0.4f, 0.6f, 0.5f, 1.0f, 0.7f, 0.8f)
-                heights.forEachIndexed { index, heightFactor ->
-                    Box(
-                        modifier = Modifier
-                            .width(32.dp)
-                            .fillMaxHeight(heightFactor)
-                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                            .background(if (index == 3) ChartBarDark else ChartBarLight)
-                    )
-                }
             }
         }
     }
