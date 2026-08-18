@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,7 +40,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-
     var showProfileDialog by remember { mutableStateOf(false) }
 
     if (showProfileDialog) {
@@ -50,12 +50,23 @@ fun HomeScreen(
         )
     }
 
+    HomeContent(
+        state = state,
+        onProfileClick = { showProfileDialog = true }
+    )
+}
+
+@Composable
+fun HomeContent(
+    state: HomeState,
+    onProfileClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(LightBackgroundHome)
     ) {
-        HomeHeader(onProfileClick = { showProfileDialog = true })
+        HomeHeader(onProfileClick = onProfileClick)
 
         LazyColumn(
             modifier = Modifier
@@ -326,5 +337,21 @@ private fun PendingPaymentItemRow(pago: Pago) {
             )
             Text(text = pago.fecha, fontSize = 10.sp, color = TextMuted)
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    ProBasketAcademyTheme {
+        HomeContent(
+            state = HomeState(
+                jugadoresActivos = 145,
+                asistenciaPromedio = "91%",
+                ingresosMes = "$ 6,200",
+                cobrosPendientes = emptyList()
+            ),
+            onProfileClick = {}
+        )
     }
 }
