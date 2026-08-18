@@ -27,6 +27,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.google.firebase.auth.FirebaseAuth
 
 import com.probasketacademy.presentacion.auth.AuthScreen
 import com.probasketacademy.presentacion.home.HomeScreen
@@ -57,7 +58,7 @@ fun AppNavDisplay(
     val currentScreen = backStack.lastOrNull()
 
     val doLogout: () -> Unit = {
-        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+        FirebaseAuth.getInstance().signOut()
         backStack.clear()
         backStack.add(Screen.Auth)
     }
