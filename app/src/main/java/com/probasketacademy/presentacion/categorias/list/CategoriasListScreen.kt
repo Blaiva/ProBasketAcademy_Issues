@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,7 +36,6 @@ fun CategoriasListScreen(
     viewModel: CategoriasListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-
     var showProfileDialog by remember { mutableStateOf(false) }
 
     if (showProfileDialog) {
@@ -46,15 +46,30 @@ fun CategoriasListScreen(
         )
     }
 
+    CategoriasListContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onNavigateToVerEditar = onNavigateToVerEditar,
+        onProfileClick = { showProfileDialog = true }
+    )
+}
+
+@Composable
+fun CategoriasListContent(
+    state: CategoriasListState,
+    onEvent: (CategoriasListEvent) -> Unit,
+    onNavigateToVerEditar: (Long) -> Unit,
+    onProfileClick: () -> Unit
+) {
     if (state.showDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.onEvent(CategoriasListEvent.OnShowDialogChanged(false)) },
+            onDismissRequest = { onEvent(CategoriasListEvent.OnShowDialogChanged(false)) },
             title = { Text("Nueva Categoría", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 Column {
                     OutlinedTextField(
                         value = state.nombreCategoria,
-                        onValueChange = { viewModel.onEvent(CategoriasListEvent.OnNombreCategoriaChanged(it)) },
+                        onValueChange = { onEvent(CategoriasListEvent.OnNombreCategoriaChanged(it)) },
                         label = { Text("Nombre de la categoría") },
                         isError = state.nombreError != null,
                         singleLine = true,
@@ -74,7 +89,7 @@ fun CategoriasListScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.onEvent(CategoriasListEvent.OnGuardarCategoria) },
+                    onClick = { onEvent(CategoriasListEvent.OnGuardarCategoria) },
                     enabled = !state.isSaving,
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) {
@@ -91,7 +106,7 @@ fun CategoriasListScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { viewModel.onEvent(CategoriasListEvent.OnShowDialogChanged(false)) }
+                    onClick = { onEvent(CategoriasListEvent.OnShowDialogChanged(false)) }
                 ) {
                     Text("Cancelar", color = TextMuted)
                 }
@@ -103,7 +118,7 @@ fun CategoriasListScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.onEvent(CategoriasListEvent.OnShowDialogChanged(true)) },
+                onClick = { onEvent(CategoriasListEvent.OnShowDialogChanged(true)) },
                 containerColor = HeaderOrange,
                 contentColor = Color.White,
                 shape = CircleShape
@@ -151,15 +166,15 @@ fun CategoriasListScreen(
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.2f))
-                            .clickable { showProfileDialog = true },
+                            .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
+
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
                     text = "Categorías\nAdministradas",
@@ -177,6 +192,7 @@ fun CategoriasListScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+
             if (state.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = HeaderOrange)
@@ -189,9 +205,7 @@ fun CategoriasListScreen(
                     items(state.categorias) { categoria ->
                         CategoriaItemCard(
                             categoria = categoria,
-                            onClick = {
-                                onNavigateToVerEditar(categoria.id)
-                            }
+                            onClick = { onNavigateToVerEditar(categoria.id) }
                         )
                     }
                 }
@@ -249,5 +263,23 @@ private fun CategoriaItemCard(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CategoriasListScreenPreview() {
+    ProBasketAcademyTheme {
+        CategoriasListContent(
+            state = CategoriasListState(
+                categorias = listOf(
+                    Categoria(nombre = "U-20", totalJugadores = 15),
+                    Categoria(nombre = "U-18", totalJugadores = 12)
+                )
+            ),
+            onEvent = {},
+            onNavigateToVerEditar = {},
+            onProfileClick = {}
+        )
     }
 }
