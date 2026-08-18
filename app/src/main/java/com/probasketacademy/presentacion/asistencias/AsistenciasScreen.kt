@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -39,7 +40,6 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciasScreen(
     onNavigateBack: () -> Unit,
@@ -47,25 +47,6 @@ fun AsistenciasScreen(
     viewModel: AsistenciasViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
-
-    val currentMonth = remember { YearMonth.now() }
-    val startMonth = remember { currentMonth.minusMonths(24) }
-    val endMonth = remember { currentMonth.plusMonths(24) }
-    val firstDayOfWeek = remember { firstDayOfWeekFromLocale() }
-
-    val calendarState = rememberCalendarState(
-        startMonth = startMonth,
-        endMonth = endMonth,
-        firstVisibleMonth = currentMonth,
-        firstDayOfWeek = firstDayOfWeek
-    )
-
-    val visibleMonth = calendarState.firstVisibleMonth.yearMonth
-    LaunchedEffect(visibleMonth) {
-        viewModel.onEvent(AsistenciasEvent.OnVisibleMonthChanged(visibleMonth))
-    }
-
     var showProfileDialog by remember { mutableStateOf(false) }
 
     if (showProfileDialog) {
@@ -81,6 +62,40 @@ fun AsistenciasScreen(
             viewModel.onEvent(AsistenciasEvent.OnResetGuardado)
             onNavigateBack()
         }
+    }
+
+    AsistenciasContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onNavigateBack = onNavigateBack,
+        onProfileClick = { showProfileDialog = true }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AsistenciasContent(
+    state: AsistenciasState,
+    onEvent: (AsistenciasEvent) -> Unit,
+    onNavigateBack: () -> Unit,
+    onProfileClick: () -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val currentMonth = remember { YearMonth.now() }
+    val startMonth = remember { currentMonth.minusMonths(24) }
+    val endMonth = remember { currentMonth.plusMonths(24) }
+    val firstDayOfWeek = remember { firstDayOfWeekFromLocale() }
+
+    val calendarState = rememberCalendarState(
+        startMonth = startMonth,
+        endMonth = endMonth,
+        firstVisibleMonth = currentMonth,
+        firstDayOfWeek = firstDayOfWeek
+    )
+    val visibleMonth = calendarState.firstVisibleMonth.yearMonth
+
+    LaunchedEffect(visibleMonth) {
+        onEvent(AsistenciasEvent.OnVisibleMonthChanged(visibleMonth))
     }
 
     Scaffold(containerColor = LightBackground) { padding ->
@@ -105,7 +120,7 @@ fun AsistenciasScreen(
                                 .size(36.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.2f))
-                                .clickable { showProfileDialog = true },
+                                .clickable { onProfileClick() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
@@ -143,7 +158,7 @@ fun AsistenciasScreen(
                                     DropdownMenuItem(
                                         text = { Text(cat.nombre) },
                                         onClick = {
-                                            viewModel.onEvent(AsistenciasEvent.OnCategoriaSelected(cat.id, cat.nombre))
+                                            onEvent(AsistenciasEvent.OnCategoriaSelected(cat.id, cat.nombre))
                                             categoriaExpanded = false
                                         }
                                     )
@@ -154,15 +169,10 @@ fun AsistenciasScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
             if (state.categoriaSeleccionadaId == null) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text(
-                            "Selecciona una categoría para tomar el pase de lista.",
-                            color = TextMuted,
-                            textAlign = TextAlign.Center
-                        )
+                        Text("Selecciona una categoría para tomar el pase de lista.", color = TextMuted, textAlign = TextAlign.Center)
                     }
                 }
             } else {
@@ -198,14 +208,13 @@ fun AsistenciasScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-
                             HorizontalCalendar(
                                 state = calendarState,
                                 dayContent = { day ->
                                     DayCell(
                                         day = day,
                                         isSelected = state.selectedDate == day.date,
-                                        onClick = { viewModel.onEvent(AsistenciasEvent.OnDateSelected(it.date)) }
+                                        onClick = { onEvent(AsistenciasEvent.OnDateSelected(it.date)) }
                                     )
                                 }
                             )
@@ -228,10 +237,8 @@ fun AsistenciasScreen(
                 if (state.isLoading) {
                     item { Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = HeaderOrange) } }
                 } else {
-
                     val presentes = state.jugadores.filter { state.asistencias[it.jugadorId] == true }
                     val ausentes = state.jugadores.filter { state.asistencias[it.jugadorId] != true }
-
                     if (ausentes.isNotEmpty()) {
                         item {
                             Text(
@@ -255,14 +262,7 @@ fun AsistenciasScreen(
                                             jugador = jugador,
                                             isChecked = false,
                                             isEditable = state.isEditable,
-                                            onCheckedChange = {
-                                                viewModel.onEvent(
-                                                    AsistenciasEvent.OnJugadorToggled(
-                                                        jugador.jugadorId,
-                                                        it
-                                                    )
-                                                )
-                                            }
+                                            onCheckedChange = { onEvent(AsistenciasEvent.OnJugadorToggled(jugador.jugadorId, it)) }
                                         )
                                         if (index < ausentes.size - 1) HorizontalDivider(color = DividerColor)
                                     }
@@ -294,14 +294,7 @@ fun AsistenciasScreen(
                                             jugador = jugador,
                                             isChecked = true,
                                             isEditable = state.isEditable,
-                                            onCheckedChange = {
-                                                viewModel.onEvent(
-                                                    AsistenciasEvent.OnJugadorToggled(
-                                                        jugador.jugadorId,
-                                                        it
-                                                    )
-                                                )
-                                            }
+                                            onCheckedChange = { onEvent(AsistenciasEvent.OnJugadorToggled(jugador.jugadorId, it)) }
                                         )
                                         if (index < presentes.size - 1) HorizontalDivider(color = DividerColor)
                                     }
@@ -312,45 +305,22 @@ fun AsistenciasScreen(
                     }
                     if (state.isEditable) {
                         item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Button(
                                     onClick = {
-                                        viewModel.onEvent(AsistenciasEvent.OnResetGuardado)
+                                        onEvent(AsistenciasEvent.OnResetGuardado)
                                         onNavigateBack()
                                     },
                                     modifier = Modifier.weight(1f).height(56.dp),
                                     shape = RoundedCornerShape(24.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(
-                                            0xFF6B6B6B
-                                        )
-                                    )
-                                ) {
-                                    Text(
-                                        "Cancelar",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        color = Color.White
-                                    )
-                                }
-
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6B6B6B))
+                                ) { Text("Cancelar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White) }
                                 Button(
-                                    onClick = { viewModel.onEvent(AsistenciasEvent.OnConfirmarAsistencia) },
+                                    onClick = { onEvent(AsistenciasEvent.OnConfirmarAsistencia) },
                                     modifier = Modifier.weight(1f).height(56.dp),
                                     shape = RoundedCornerShape(24.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
-                                ) {
-                                    Text(
-                                        "Confirmar\nAsistencia",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = Color.White,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
+                                ) { Text("Confirmar\nAsistencia", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White, textAlign = TextAlign.Center) }
                             }
                         }
                     }
@@ -369,7 +339,6 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, onClick: (CalendarDay) -> Uni
         else -> TextDark
     }
     val bgColor = if (isSelected) HeaderOrange else Color.Transparent
-
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -408,12 +377,29 @@ private fun JugadorAsistenciaRow(
         ) { Text(jugador.nombre.take(1).uppercase(), fontWeight = FontWeight.Bold, color = TextDark, fontSize = 16.sp) }
         Spacer(modifier = Modifier.width(16.dp))
         Text(jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextDark, modifier = Modifier.weight(1f))
-
         Checkbox(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             enabled = isEditable,
             colors = CheckboxDefaults.colors(checkedColor = SuccessGreen, checkmarkColor = Color.White)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AsistenciasScreenPreview() {
+    ProBasketAcademyTheme {
+        AsistenciasContent(
+            state = AsistenciasState(
+                jugadores = listOf(
+                    Jugador(nombre = "William Rodriguez", categoriaNombre = "U-20"),
+                    Jugador(nombre = "Juan Perez", categoriaNombre = "U-20")
+                )
+            ),
+            onEvent = {},
+            onNavigateBack = {},
+            onProfileClick = {}
         )
     }
 }

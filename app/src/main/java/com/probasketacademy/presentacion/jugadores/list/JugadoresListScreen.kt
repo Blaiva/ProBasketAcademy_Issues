@@ -23,6 +23,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,7 +34,7 @@ import coil3.request.crossfade
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.presentacion.perfil.ProfileDialog
-import com.probasketacademy.ui.theme.* // Importamos todo de tu theme
+import com.probasketacademy.ui.theme.*
 
 @Composable
 fun JugadoresListScreen(
@@ -42,7 +44,6 @@ fun JugadoresListScreen(
     viewModel: JugadoresListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-
     var showProfileDialog by remember { mutableStateOf(false) }
 
     if (showProfileDialog) {
@@ -53,11 +54,28 @@ fun JugadoresListScreen(
         )
     }
 
+    JugadoresListContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onNavigateToDetail = onNavigateToDetail,
+        onAddJugador = onAddJugador,
+        onProfileClick = { showProfileDialog = true }
+    )
+}
+
+@Composable
+fun JugadoresListContent(
+    state: JugadoresListState,
+    onEvent: (JugadoresListEvent) -> Unit,
+    onNavigateToDetail: (Long) -> Unit,
+    onAddJugador: () -> Unit,
+    onProfileClick: () -> Unit
+) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    viewModel.onEvent(JugadoresListEvent.OnAddJugadorClicked)
+                    onEvent(JugadoresListEvent.OnAddJugadorClicked)
                     onAddJugador()
                 },
                 containerColor = HeaderOrange,
@@ -103,14 +121,13 @@ fun JugadoresListScreen(
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.2f))
-                            .clickable { showProfileDialog = true },
+                            .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text(
@@ -127,10 +144,9 @@ fun JugadoresListScreen(
                     color = TextMuted
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-
                 OutlinedTextField(
                     value = state.searchQuery,
-                    onValueChange = { viewModel.onEvent(JugadoresListEvent.OnSearchQueryChanged(it)) },
+                    onValueChange = { onEvent(JugadoresListEvent.OnSearchQueryChanged(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Buscar por nombre o posición...", color = TextMuted) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
@@ -143,8 +159,8 @@ fun JugadoresListScreen(
                     singleLine = true
                 )
             }
-
             Spacer(modifier = Modifier.height(16.dp))
+
             if (state.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = HeaderOrange)
@@ -158,7 +174,7 @@ fun JugadoresListScreen(
                         JugadorItemRow(
                             jugador = jugador,
                             onClick = {
-                                viewModel.onEvent(JugadoresListEvent.OnJugadorClicked(jugador.jugadorId))
+                                onEvent(JugadoresListEvent.OnJugadorClicked(jugador.jugadorId))
                                 onNavigateToDetail(jugador.jugadorId)
                             }
                         )
@@ -172,7 +188,7 @@ fun JugadoresListScreen(
                                     .padding(vertical = 24.dp),
                                 color = TextMuted,
                                 fontSize = 12.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -185,7 +201,6 @@ fun JugadoresListScreen(
 @Composable
 private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
     val context = LocalContext.current
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -215,7 +230,7 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
                             .build(),
                         contentDescription = "Foto de ${jugador.nombre}",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop // Recorta la imagen para que llene el círculo
+                        contentScale = ContentScale.Crop
                     )
                 } else {
                     Text(
@@ -226,18 +241,15 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
                     )
                 }
             }
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
                 Text(
-                    text = "${jugador.categoriaNombre} • Talla: ${jugador.tallaCamiseta.ifEmpty { "N/A" }}",
+                    text = "${jugador.categoriaNombre}   Talla: ${jugador.tallaCamiseta.ifEmpty { "N/A" }}",
                     fontSize = 12.sp,
                     color = TextMuted
                 )
             }
-
             val isActive = jugador.estado.equals("Activo", ignoreCase = true)
             Box(
                 modifier = Modifier
@@ -252,9 +264,27 @@ private fun JugadorItemRow(jugador: Jugador, onClick: () -> Unit) {
                     color = if (isActive) ChipActiveText else ChipInactiveText
                 )
             }
-
             Spacer(modifier = Modifier.width(8.dp))
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ChevronColor)
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun JugadoresListPreview() {
+    ProBasketAcademyTheme {
+        JugadoresListContent(
+            state = JugadoresListState(
+                jugadores = listOf(
+                    Jugador(nombre = "William Rodriguez", categoriaNombre = "U-20", estado = "Activo"),
+                    Jugador(nombre = "Juan Perez", categoriaNombre = "U-18", estado = "Inactivo")
+                )
+            ),
+            onEvent = {},
+            onNavigateToDetail = {},
+            onAddJugador = {},
+            onProfileClick = {}
+        )
     }
 }

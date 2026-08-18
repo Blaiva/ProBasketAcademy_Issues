@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,15 +44,37 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventosScreen(
     onLogout: () -> Unit,
     viewModel: EventosViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
+    var showProfileDialog by remember { mutableStateOf(false) }
 
+    if (showProfileDialog) {
+        ProfileDialog(
+            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            onDismiss = { showProfileDialog = false },
+            onLogout = { showProfileDialog = false; onLogout() }
+        )
+    }
+
+    EventosContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onProfileClick = { showProfileDialog = true }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EventosContent(
+    state: EventosState,
+    onEvent: (EventosEvent) -> Unit,
+    onProfileClick: () -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
     val today = remember { LocalDate.now() }
     val currentMonth = remember { YearMonth.now() }
     val startMonth = remember { currentMonth.minusMonths(24) }
@@ -65,18 +88,9 @@ fun EventosScreen(
         firstDayOfWeek = firstDayOfWeek
     )
     val visibleMonth = calendarState.firstVisibleMonth.yearMonth
+
     LaunchedEffect(visibleMonth) {
-        viewModel.onEvent(EventosEvent.OnVisibleMonthChanged(visibleMonth))
-    }
-
-    var showProfileDialog by remember { mutableStateOf(false) }
-
-    if (showProfileDialog) {
-        ProfileDialog(
-            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
-            onDismiss = { showProfileDialog = false },
-            onLogout = { showProfileDialog = false; onLogout() }
-        )
+        onEvent(EventosEvent.OnVisibleMonthChanged(visibleMonth))
     }
 
     if (state.showAddDialog) {
@@ -87,7 +101,7 @@ fun EventosScreen(
         var lugar by remember { mutableStateOf("") }
 
         AlertDialog(
-            onDismissRequest = { viewModel.onEvent(EventosEvent.OnToggleAddDialog) },
+            onDismissRequest = { onEvent(EventosEvent.OnToggleAddDialog) },
             title = { Text("Nuevo Evento", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -106,21 +120,21 @@ fun EventosScreen(
                         try {
                             val time = LocalTime.parse(horaStr)
                             val dur = duracionStr.toFloatOrNull() ?: 1f
-                            viewModel.onEvent(EventosEvent.OnGuardarEvento(titulo, tipo, time, dur, lugar))
+                            onEvent(EventosEvent.OnGuardarEvento(titulo, tipo, time, dur, lugar))
                         } catch (e: Exception) { }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) { Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.onEvent(EventosEvent.OnToggleAddDialog) }) { Text("Cancelar", color = TextMuted) }
+                TextButton(onClick = { onEvent(EventosEvent.OnToggleAddDialog) }) { Text("Cancelar", color = TextMuted) }
             },
             containerColor = CardBackground
         )
     }
 
     if (state.showEditDialog && state.eventoSeleccionado != null) {
-        val evento = state.eventoSeleccionado!!
+        val evento = state.eventoSeleccionado
         var titulo by remember(evento.id) { mutableStateOf(evento.titulo) }
         var tipo by remember(evento.id) { mutableStateOf(evento.tipo) }
         var horaStr by remember(evento.id) {
@@ -134,7 +148,7 @@ fun EventosScreen(
         var lugar by remember(evento.id) { mutableStateOf(evento.lugar) }
 
         AlertDialog(
-            onDismissRequest = { viewModel.onEvent(EventosEvent.OnToggleEditDialog) },
+            onDismissRequest = { onEvent(EventosEvent.OnToggleEditDialog) },
             title = { Text("Editar Evento", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -145,9 +159,8 @@ fun EventosScreen(
                         OutlinedTextField(value = duracionStr, onValueChange = { duracionStr = it }, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
                     }
                     OutlinedTextField(value = lugar, onValueChange = { lugar = it }, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-
                     TextButton(
-                        onClick = { viewModel.onEvent(EventosEvent.OnEliminarEvento) },
+                        onClick = { onEvent(EventosEvent.OnEliminarEvento) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
@@ -162,14 +175,14 @@ fun EventosScreen(
                         try {
                             val time = LocalTime.parse(horaStr)
                             val dur = duracionStr.toFloatOrNull() ?: 1f
-                            viewModel.onEvent(EventosEvent.OnActualizarEvento(titulo, tipo, time, dur, lugar))
+                            onEvent(EventosEvent.OnActualizarEvento(titulo, tipo, time, dur, lugar))
                         } catch (e: Exception) { }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) { Text("Guardar Cambios", color = Color.White, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.onEvent(EventosEvent.OnToggleEditDialog) }) { Text("Cancelar", color = TextMuted) }
+                TextButton(onClick = { onEvent(EventosEvent.OnToggleEditDialog) }) { Text("Cancelar", color = TextMuted) }
             },
             containerColor = CardBackground
         )
@@ -179,7 +192,7 @@ fun EventosScreen(
         floatingActionButton = {
             if (!state.selectedDate.isBefore(today)) {
                 FloatingActionButton(
-                    onClick = { viewModel.onEvent(EventosEvent.OnToggleAddDialog) },
+                    onClick = { onEvent(EventosEvent.OnToggleAddDialog) },
                     containerColor = HeaderOrange,
                     contentColor = Color.White,
                     shape = CircleShape
@@ -219,16 +232,13 @@ fun EventosScreen(
                                 .size(36.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.2f))
-                                .clickable { showProfileDialog = true },
+                                .clickable { onProfileClick() },
                             contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
-                        }
+                        ) { Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -238,7 +248,6 @@ fun EventosScreen(
                 ) {
                     Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
                         val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
-
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -254,9 +263,7 @@ fun EventosScreen(
                                 }
                             }
                         }
-
                         Spacer(modifier = Modifier.height(8.dp))
-
                         val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
                         Row(modifier = Modifier.fillMaxWidth()) {
                             for (day in daysOfWeek) {
@@ -270,9 +277,7 @@ fun EventosScreen(
                                 )
                             }
                         }
-
                         Spacer(modifier = Modifier.height(8.dp))
-
                         HorizontalCalendar(
                             state = calendarState,
                             dayContent = { day ->
@@ -280,9 +285,9 @@ fun EventosScreen(
                                     day = day,
                                     isSelected = state.selectedDate == day.date,
                                     isPast = day.date.isBefore(today),
-                                    hasEvent = state.diasConEventos.contains(day.date), // Pasamos la información del punto
+                                    hasEvent = state.diasConEventos.contains(day.date),
                                     onClick = {
-                                        viewModel.onEvent(EventosEvent.OnDateSelected(it.date))
+                                        onEvent(EventosEvent.OnDateSelected(it.date))
                                     }
                                 )
                             }
@@ -291,12 +296,10 @@ fun EventosScreen(
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
-
             item {
                 val dayName = state.selectedDate.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
                 val dayNum = state.selectedDate.dayOfMonth
                 val monthNameTitle = state.selectedDate.month.getDisplayName(TextStyle.SHORT, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
-
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -316,7 +319,6 @@ fun EventosScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
             if (state.isLoading) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -333,7 +335,7 @@ fun EventosScreen(
                     Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                         EventoItemRow(
                             evento = evento,
-                            onClick = { viewModel.onEvent(EventosEvent.OnEventoClicked(evento)) }
+                            onClick = { onEvent(EventosEvent.OnEventoClicked(evento)) }
                         )
                     }
                 }
@@ -345,7 +347,6 @@ fun EventosScreen(
 @Composable
 fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, hasEvent: Boolean, onClick: (CalendarDay) -> Unit) {
     val isCurrentMonth = day.position == DayPosition.MonthDate
-
     val textColor = when {
         isSelected -> Color.White
         !isCurrentMonth -> TextMuted.copy(alpha = 0.3f)
@@ -353,7 +354,6 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, hasEvent: Bo
         else -> TextDark
     }
     val bgColor = if (isSelected) HeaderOrange else Color.Transparent
-
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -378,7 +378,6 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, hasEvent: Bo
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 4.dp)
                     .size(4.dp)
-                    // Si el día está seleccionado, el punto se vuelve blanco, si no, azul como en tu imagen.
                     .background(if (isSelected) Color.White else BlueIcon, CircleShape)
             )
         }
@@ -449,13 +448,9 @@ fun EventoItemRow(evento: Evento, onClick: () -> Unit) {
                 Text(text = time.format(formatter), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TextDark)
                 Text(text = durationText, fontSize = 12.sp, color = TextMuted)
             }
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Box(modifier = Modifier.width(3.dp).height(40.dp).background(lineColor, RoundedCornerShape(50)))
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = evento.titulo, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
                 Spacer(modifier = Modifier.height(4.dp))
@@ -465,7 +460,6 @@ fun EventoItemRow(evento: Evento, onClick: () -> Unit) {
                     Text(text = evento.lugar, fontSize = 13.sp, color = TextMuted)
                 }
             }
-
             Box(
                 modifier = Modifier.size(44.dp).background(iconBg, CircleShape),
                 contentAlignment = Alignment.Center
@@ -473,5 +467,21 @@ fun EventoItemRow(evento: Evento, onClick: () -> Unit) {
                 Icon(iconVector, contentDescription = null, tint = iconTint, modifier = Modifier.size(22.dp))
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EventosScreenPreview() {
+    ProBasketAcademyTheme {
+        EventosContent(
+            state = EventosState(
+                eventosDelDia = listOf(
+                    Evento(titulo = "Entrenamiento U-20", tipo = "Entrenamiento", lugar = "Cancha Central")
+                )
+            ),
+            onEvent = {},
+            onProfileClick = {}
+        )
     }
 }

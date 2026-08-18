@@ -20,10 +20,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
+import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.presentacion.perfil.ProfileDialog
 import com.probasketacademy.ui.theme.*
 
@@ -34,7 +36,6 @@ fun PagosListScreen(
     viewModel: PagosListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-
     var showProfileDialog by remember { mutableStateOf(false) }
 
     if (showProfileDialog) {
@@ -45,6 +46,21 @@ fun PagosListScreen(
         )
     }
 
+    PagosListContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onNavigateToDetalle = onNavigateToDetalle,
+        onProfileClick = { showProfileDialog = true }
+    )
+}
+
+@Composable
+fun PagosListContent(
+    state: PagosListState,
+    onEvent: (PagosListEvent) -> Unit,
+    onNavigateToDetalle: (Long) -> Unit,
+    onProfileClick: () -> Unit
+) {
     Scaffold(containerColor = LightBackground) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
             Box(
@@ -71,21 +87,18 @@ fun PagosListScreen(
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = 0.2f))
-                            .clickable { showProfileDialog = true },
+                            .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Text("Finanzas y Pagos", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("Monitorea los ingresos de la academia y las deudas.", fontSize = 13.sp, color = TextMuted)
-
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Card(
@@ -105,10 +118,9 @@ fun PagosListScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
                 OutlinedTextField(
                     value = state.searchQuery,
-                    onValueChange = { viewModel.onEvent(PagosListEvent.OnSearchQueryChanged(it)) },
+                    onValueChange = { onEvent(PagosListEvent.OnSearchQueryChanged(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Buscar jugador...", color = TextMuted) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
@@ -121,7 +133,6 @@ fun PagosListScreen(
                     singleLine = true
                 )
             }
-
             Spacer(modifier = Modifier.height(16.dp))
 
             if (state.isLoading) {
@@ -147,20 +158,16 @@ fun PagosListScreen(
                                         modifier = Modifier.size(48.dp).background(BorderColor, CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) { Text(if (jugador.nombre.isNotEmpty()) jugador.nombre.take(1).uppercase() else "?", fontWeight = FontWeight.Bold, color = TextDark, fontSize = 18.sp) }
-
                                     Spacer(modifier = Modifier.width(12.dp))
-
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
                                         Text("${jugador.categoriaNombre}   #${jugador.numeroCamiseta}", fontSize = 12.sp, color = TextMuted)
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ChevronColor)
                                 }
-
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Divider(color = BorderColor, thickness = 0.5.dp)
+                                HorizontalDivider(color = BorderColor, thickness = 0.5.dp)
                                 Spacer(modifier = Modifier.height(12.dp))
-
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -187,6 +194,26 @@ private fun FinancialColumn(label: String, amount: Double, color: Color) {
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = color
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PagosListPreview() {
+    ProBasketAcademyTheme {
+        PagosListContent(
+            state = PagosListState(
+                jugadores = listOf(
+                    Jugador(nombre = "William Rodriguez", categoriaNombre = "U-20", totalGenerado = 500.0, totalPagado = 250.0, deudaActual = 250.0)
+                ),
+                totalGeneradoGlobal = 500.0,
+                totalPagadoGlobal = 250.0,
+                deudaGlobal = 250.0
+            ),
+            onEvent = {},
+            onNavigateToDetalle = {},
+            onProfileClick = {}
         )
     }
 }

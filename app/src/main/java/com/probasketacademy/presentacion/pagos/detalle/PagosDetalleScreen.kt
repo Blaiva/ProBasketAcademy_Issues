@@ -21,13 +21,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.model.Pago
 import com.probasketacademy.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PagosDetalleScreen(
     jugadorId: Long,
@@ -40,46 +41,55 @@ fun PagosDetalleScreen(
         viewModel.cargarDatos(jugadorId)
     }
 
+    PagosDetalleContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onNavigateBack = onNavigateBack
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PagosDetalleContent(
+    state: PagosDetalleState,
+    onEvent: (PagosDetalleEvent) -> Unit,
+    onNavigateBack: () -> Unit
+) {
     if (state.showPagoDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.onEvent(PagosDetalleEvent.OnTogglePagoDialog) },
+            onDismissRequest = { onEvent(PagosDetalleEvent.OnTogglePagoDialog) },
             title = { Text("Registrar Abono o Pago", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("Ingresa los detalles del cobro y el abono recibido:", fontSize = 13.sp, color = TextMuted)
-
                     OutlinedTextField(
                         value = state.conceptoInput,
-                        onValueChange = { viewModel.onEvent(PagosDetalleEvent.OnConceptoChanged(it)) },
+                        onValueChange = { onEvent(PagosDetalleEvent.OnConceptoChanged(it)) },
                         label = { Text("Concepto (ej. Cuota Mensual)") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
-
                     OutlinedTextField(
                         value = state.montoTotalInput,
-                        onValueChange = { viewModel.onEvent(PagosDetalleEvent.OnMontoTotalChanged(it)) },
+                        onValueChange = { onEvent(PagosDetalleEvent.OnMontoTotalChanged(it)) },
                         label = { Text("Monto Total a Pagar") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
-
                     OutlinedTextField(
                         value = state.montoAbonadoInput,
-                        onValueChange = { viewModel.onEvent(PagosDetalleEvent.OnMontoAbonadoChanged(it)) },
+                        onValueChange = { onEvent(PagosDetalleEvent.OnMontoAbonadoChanged(it)) },
                         label = { Text("Monto Abonado Hoy") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
-
                     HorizontalDivider(color = DividerColor)
                     Text("Detalles de Inscripción", fontWeight = FontWeight.Bold, color = PrimaryOrange, fontSize = 12.sp)
-
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         var inscripcionExpanded by remember { mutableStateOf(false) }
                         ExposedDropdownMenuBox(
@@ -104,35 +114,34 @@ fun PagosDetalleScreen(
                                     DropdownMenuItem(
                                         text = { Text(tipo) },
                                         onClick = {
-                                            viewModel.onEvent(PagosDetalleEvent.OnTipoInscripcionChanged(tipo))
+                                            onEvent(PagosDetalleEvent.OnTipoInscripcionChanged(tipo))
                                             inscripcionExpanded = false
                                         }
                                     )
                                 }
                             }
                         }
-
                         OutlinedTextField(
                             value = state.fechaInicio,
-                            onValueChange = { viewModel.onEvent(PagosDetalleEvent.OnFechaInicioChanged(it)) },
+                            onValueChange = { onEvent(PagosDetalleEvent.OnFechaInicioChanged(it)) },
                             label = { Text("Fecha Inicio") },
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("dd/mm/yyyy") },
                             shape = RoundedCornerShape(12.dp)
                         )
                     }
-                    
+
                     Text("Vencimiento automático: ${state.fechaVencimiento}", fontSize = 11.sp, color = TextMuted)
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.onEvent(PagosDetalleEvent.OnRegistrarPago) },
+                    onClick = { onEvent(PagosDetalleEvent.OnRegistrarPago) },
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) { Text("Guardar Pago", color = Color.White, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.onEvent(PagosDetalleEvent.OnTogglePagoDialog) }) { Text("Cancelar", color = TextMuted) }
+                TextButton(onClick = { onEvent(PagosDetalleEvent.OnTogglePagoDialog) }) { Text("Cancelar", color = TextMuted) }
             },
             containerColor = CardBackground
         )
@@ -140,15 +149,15 @@ fun PagosDetalleScreen(
 
     if (state.showAbonoDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) },
+            onDismissRequest = { onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) },
             title = { Text("Registrar Abono al Capital", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text("Deuda actual de este cobro: $${state.selectedPagoParaAbono?.deuda ?: 0.0}", fontSize = 14.sp, color = TextDark, fontWeight = FontWeight.Bold)
-                    
+
                     OutlinedTextField(
                         value = state.montoNuevoAbonoInput,
-                        onValueChange = { viewModel.onEvent(PagosDetalleEvent.OnMontoNuevoAbonoChanged(it)) },
+                        onValueChange = { onEvent(PagosDetalleEvent.OnMontoNuevoAbonoChanged(it)) },
                         label = { Text("Monto del Abono") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
@@ -159,21 +168,21 @@ fun PagosDetalleScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.onEvent(PagosDetalleEvent.OnRegistrarAbono) },
+                    onClick = { onEvent(PagosDetalleEvent.OnRegistrarAbono) },
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) { Text("Confirmar Abono", color = Color.White, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) }) { Text("Cancelar", color = TextMuted) }
+                TextButton(onClick = { onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) }) { Text("Cancelar", color = TextMuted) }
             },
             containerColor = CardBackground
         )
     }
 
     if (state.showSaldarConfirmDialog && state.pagoParaSaldar != null) {
-        val pago = state.pagoParaSaldar!!
+        val pago = state.pagoParaSaldar
         AlertDialog(
-            onDismissRequest = { viewModel.onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog()) },
+            onDismissRequest = { onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog()) },
             title = { Text("Confirmar Saldo", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 Text(
@@ -183,12 +192,12 @@ fun PagosDetalleScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.onEvent(PagosDetalleEvent.OnConfirmarSaldar) },
+                    onClick = { onEvent(PagosDetalleEvent.OnConfirmarSaldar) },
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) { Text("Confirmar", color = Color.White, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog()) }) { Text("Cancelar", color = TextMuted) }
+                TextButton(onClick = { onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog()) }) { Text("Cancelar", color = TextMuted) }
             },
             containerColor = CardBackground
         )
@@ -215,7 +224,6 @@ fun PagosDetalleScreen(
                 }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
-
                 state.jugador?.let { jugador ->
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -234,7 +242,7 @@ fun PagosDetalleScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(jugador.nombre.uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = TextDark)
-                                Text("#${jugador.numeroCamiseta}, ${jugador.categoriaNombre?.ifEmpty { "Sin Categoría" } ?: "Sin Categoría"}", fontSize = 13.sp, color = TextMuted)
+                                Text("#${jugador.numeroCamiseta}, ${jugador.categoriaNombre.ifEmpty { "Sin Categoría" }}", fontSize = 13.sp, color = TextMuted)
                             }
                         }
                     }
@@ -283,7 +291,6 @@ fun PagosDetalleScreen(
                         Text("Deuda Total Pendiente:", fontSize = 13.sp, color = TextMuted)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("$${state.saldoPendiente}", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
-
                         Spacer(modifier = Modifier.height(12.dp))
 
                         val isAlDia = state.saldoPendiente <= 0
@@ -320,13 +327,12 @@ fun PagosDetalleScreen(
                             Text("Estado", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMuted, textAlign = TextAlign.End, modifier = Modifier.weight(0.8f))
                         }
                         HorizontalDivider(color = DividerColor)
-
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(state.pagos) { pago ->
                                 PagoItemRow(
                                     pago = pago,
-                                    onMarcarPagado = { viewModel.onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog(pago)) },
-                                    onAbonar = { viewModel.onEvent(PagosDetalleEvent.OnToggleAbonoDialog(pago)) }
+                                    onMarcarPagado = { onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog(pago)) },
+                                    onAbonar = { onEvent(PagosDetalleEvent.OnToggleAbonoDialog(pago)) }
                                 )
                                 HorizontalDivider(color = DividerColor)
                             }
@@ -338,13 +344,12 @@ fun PagosDetalleScreen(
                         }
                     }
                 }
-
                 Column(
                     modifier = Modifier.fillMaxWidth().background(CardBackground).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
-                        onClick = { viewModel.onEvent(PagosDetalleEvent.OnTogglePagoDialog) },
+                        onClick = { onEvent(PagosDetalleEvent.OnTogglePagoDialog) },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
@@ -358,7 +363,6 @@ fun PagosDetalleScreen(
 @Composable
 private fun PagoItemRow(pago: Pago, onMarcarPagado: () -> Unit, onAbonar: () -> Unit) {
     val isPagado = pago.estado.equals("PAGADO", ignoreCase = true)
-
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -368,7 +372,6 @@ private fun PagoItemRow(pago: Pago, onMarcarPagado: () -> Unit, onAbonar: () -> 
             Spacer(modifier = Modifier.height(2.dp))
             Text(pago.concepto, fontSize = 13.sp, color = TextDark, fontWeight = FontWeight.Bold, maxLines = 2)
         }
-
         Column(modifier = Modifier.weight(1f)) {
             Text("Total: $${pago.montoTotal}", fontSize = 11.sp, color = TextDark)
             Text("Abonado: $${pago.montoPagado}", fontSize = 11.sp, color = SuccessGreen)
@@ -376,7 +379,6 @@ private fun PagoItemRow(pago: Pago, onMarcarPagado: () -> Unit, onAbonar: () -> 
                 Text("Debe: $${pago.deuda}", fontSize = 11.sp, color = Color(0xFFF44336), fontWeight = FontWeight.Bold)
             }
         }
-
         Row(modifier = Modifier.weight(0.8f), horizontalArrangement = Arrangement.End) {
             if (!isPagado) {
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -428,5 +430,24 @@ private fun PagoItemRow(pago: Pago, onMarcarPagado: () -> Unit, onAbonar: () -> 
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PagosDetalleScreenPreview() {
+    ProBasketAcademyTheme {
+        PagosDetalleContent(
+            state = PagosDetalleState(
+                jugador = Jugador(nombre = "William Rodriguez", categoriaNombre = "U-20", numeroCamiseta = 24),
+                saldoPendiente = 250.0,
+                pagos = listOf(
+                    Pago(concepto = "Cuota Mensual Enero", montoTotal = 500.0, montoPagado = 250.0, deuda = 250.0, estado = "ABONADO", fecha = "15 Ene 2026"),
+                    Pago(concepto = "Inscripción", montoTotal = 300.0, montoPagado = 300.0, deuda = 0.0, estado = "PAGADO", fecha = "10 Ene 2026")
+                )
+            ),
+            onEvent = {},
+            onNavigateBack = {}
+        )
     }
 }

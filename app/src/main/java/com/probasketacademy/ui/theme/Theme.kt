@@ -28,12 +28,14 @@ private val LightColorScheme = lightColorScheme(
     surface = CardBackground,
     onPrimary = Color.White,
     onBackground = TextDark,
-    onSurface = TextDark
+    onSurface = TextDark // <--- Esto asegura que el texto sea oscuro
 )
 
 @Composable
 fun ProBasketAcademyTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    // CAMBIO CLAVE AQUÍ: Cambiamos isSystemInDarkTheme() por false
+    // Esto fuerza a que la app use el tema claro con letras negras siempre
+    darkTheme: Boolean = false,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

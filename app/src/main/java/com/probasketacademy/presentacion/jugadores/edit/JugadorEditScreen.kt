@@ -19,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
@@ -36,15 +35,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JugadorEditScreen(
     jugadorId: Long,
@@ -52,6 +52,31 @@ fun JugadorEditScreen(
     viewModel: JugadorEditViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(jugadorId) {
+        viewModel.cargarJugador(jugadorId)
+    }
+
+    LaunchedEffect(state.isSaved, state.isDeleted) {
+        if (state.isSaved || state.isDeleted) {
+            onNavigateBack()
+        }
+    }
+
+    JugadorEditContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onNavigateBack = onNavigateBack
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JugadorEditContent(
+    state: JugadorEditState,
+    onEvent: (JugadorEditEvent) -> Unit,
+    onNavigateBack: () -> Unit
+) {
     val context = LocalContext.current
 
     val opcionesTallas = listOf("XXS", "XS", "S", "M", "L", "XL", "XXL")
@@ -71,7 +96,7 @@ fun JugadorEditScreen(
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            viewModel.onEvent(JugadorEditEvent.OnFotoChanged(uri.toString()))
+            onEvent(JugadorEditEvent.OnFotoChanged(uri.toString()))
         }
     }
 
@@ -85,17 +110,7 @@ fun JugadorEditScreen(
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            viewModel.onEvent(JugadorEditEvent.OnActaNacimientoChanged(uri.toString()))
-        }
-    }
-
-    LaunchedEffect(jugadorId) {
-        viewModel.cargarJugador(jugadorId)
-    }
-
-    LaunchedEffect(state.isSaved, state.isDeleted) {
-        if (state.isSaved || state.isDeleted) {
-            onNavigateBack()
+            onEvent(JugadorEditEvent.OnActaNacimientoChanged(uri.toString()))
         }
     }
 
@@ -188,7 +203,7 @@ fun JugadorEditScreen(
 
                     OutlinedTextField(
                         value = state.nombre,
-                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnNombreChanged(it)) },
+                        onValueChange = { onEvent(JugadorEditEvent.OnNombreChanged(it)) },
                         label = { Text("Nombre Completo") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -198,7 +213,7 @@ fun JugadorEditScreen(
 
                     OutlinedTextField(
                         value = state.domicilio,
-                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnDomicilioChanged(it)) },
+                        onValueChange = { onEvent(JugadorEditEvent.OnDomicilioChanged(it)) },
                         label = { Text("Domicilio") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -209,7 +224,7 @@ fun JugadorEditScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
                             value = state.edad,
-                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnEdadChanged(it)) },
+                            onValueChange = { onEvent(JugadorEditEvent.OnEdadChanged(it)) },
                             label = { Text("Edad") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
@@ -220,7 +235,7 @@ fun JugadorEditScreen(
 
                         OutlinedTextField(
                             value = state.telefono,
-                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTelefonoChanged(it)) },
+                            onValueChange = { onEvent(JugadorEditEvent.OnTelefonoChanged(it)) },
                             label = { Text("Teléfono") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             modifier = Modifier.weight(1f),
@@ -255,7 +270,7 @@ fun JugadorEditScreen(
                                 DropdownMenuItem(
                                     text = { Text("Ninguna (Sin Categoría)", color = MaterialTheme.colorScheme.secondary) },
                                     onClick = {
-                                        viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(0L, "Sin Categoría"))
+                                        onEvent(JugadorEditEvent.OnCategoriaSelected(0L, "Sin Categoría"))
                                         categoriaExpanded = false
                                     }
                                 )
@@ -263,7 +278,7 @@ fun JugadorEditScreen(
                                     DropdownMenuItem(
                                         text = { Text(cat.nombre) },
                                         onClick = {
-                                            viewModel.onEvent(JugadorEditEvent.OnCategoriaSelected(cat.id, cat.nombre))
+                                            onEvent(JugadorEditEvent.OnCategoriaSelected(cat.id, cat.nombre))
                                             categoriaExpanded = false
                                         }
                                     )
@@ -273,7 +288,7 @@ fun JugadorEditScreen(
 
                         OutlinedTextField(
                             value = state.numeroCamiseta,
-                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnNumeroCamisetaChanged(it)) },
+                            onValueChange = { onEvent(JugadorEditEvent.OnNumeroCamisetaChanged(it)) },
                             label = { Text("No. Camiseta") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
@@ -286,7 +301,7 @@ fun JugadorEditScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
                             value = state.estatura,
-                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnEstaturaChanged(it)) },
+                            onValueChange = { onEvent(JugadorEditEvent.OnEstaturaChanged(it)) },
                             label = { Text("Estatura (m)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f),
@@ -297,7 +312,7 @@ fun JugadorEditScreen(
 
                         OutlinedTextField(
                             value = state.peso,
-                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnPesoChanged(it)) },
+                            onValueChange = { onEvent(JugadorEditEvent.OnPesoChanged(it)) },
                             label = { Text("Peso (kg)") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             modifier = Modifier.weight(1f),
@@ -330,7 +345,7 @@ fun JugadorEditScreen(
                                 DropdownMenuItem(
                                     text = { Text(talla) },
                                     onClick = {
-                                        viewModel.onEvent(JugadorEditEvent.OnTallaCamisetaChanged(talla))
+                                        onEvent(JugadorEditEvent.OnTallaCamisetaChanged(talla))
                                         tallaExpanded = false
                                     }
                                 )
@@ -343,7 +358,7 @@ fun JugadorEditScreen(
 
                     OutlinedTextField(
                         value = state.tutorNombre,
-                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorNombreChanged(it)) },
+                        onValueChange = { onEvent(JugadorEditEvent.OnTutorNombreChanged(it)) },
                         label = { Text("Nombre del Tutor") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -354,7 +369,7 @@ fun JugadorEditScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
                             value = state.tutorTelefono,
-                            onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorTelefonoChanged(it)) },
+                            onValueChange = { onEvent(JugadorEditEvent.OnTutorTelefonoChanged(it)) },
                             label = { Text("Teléfono Tutor") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             modifier = Modifier.weight(1f),
@@ -387,7 +402,7 @@ fun JugadorEditScreen(
                                     DropdownMenuItem(
                                         text = { Text(vinculo) },
                                         onClick = {
-                                            viewModel.onEvent(JugadorEditEvent.OnTutorVinculoChanged(vinculo))
+                                            onEvent(JugadorEditEvent.OnTutorVinculoChanged(vinculo))
                                             vinculoExpanded = false
                                         }
                                     )
@@ -398,7 +413,7 @@ fun JugadorEditScreen(
 
                     OutlinedTextField(
                         value = state.tutorCorreo,
-                        onValueChange = { viewModel.onEvent(JugadorEditEvent.OnTutorCorreoChanged(it)) },
+                        onValueChange = { onEvent(JugadorEditEvent.OnTutorCorreoChanged(it)) },
                         label = { Text("Correo del Tutor") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         modifier = Modifier.fillMaxWidth(),
@@ -424,7 +439,7 @@ fun JugadorEditScreen(
                                 Switch(
                                     checked = state.estado.equals("Activo", ignoreCase = true),
                                     onCheckedChange = { isChecked ->
-                                        viewModel.onEvent(JugadorEditEvent.OnEstadoChanged(if (isChecked) "Activo" else "Inactivo"))
+                                        onEvent(JugadorEditEvent.OnEstadoChanged(if (isChecked) "Activo" else "Inactivo"))
                                     },
                                     colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
                                 )
@@ -432,7 +447,6 @@ fun JugadorEditScreen(
 
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = BorderColor)
 
-                            // --- CAMPO ACTA DE NACIMIENTO ---
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -467,9 +481,7 @@ fun JugadorEditScreen(
                                         )
                                     }
                                 }
-
                                 Spacer(modifier = Modifier.width(12.dp))
-
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text("Acta de Nacimiento", color = TextDark, fontWeight = FontWeight.Medium)
                                     Text(
@@ -481,7 +493,6 @@ fun JugadorEditScreen(
                                         color = if (!state.actaNacimientoUri.isNullOrEmpty()) SuccessGreen else TextMuted
                                     )
                                 }
-
                                 if (!state.actaNacimientoUri.isNullOrEmpty()) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
@@ -501,7 +512,7 @@ fun JugadorEditScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
-                            onClick = { viewModel.onEvent(JugadorEditEvent.OnGuardarClicked) },
+                            onClick = { onEvent(JugadorEditEvent.OnGuardarClicked) },
                             enabled = !state.isSaving && !state.isDeleting,
                             modifier = Modifier.weight(1f).height(56.dp),
                             shape = RoundedCornerShape(12.dp),
@@ -518,7 +529,7 @@ fun JugadorEditScreen(
 
                         if (!state.isNew) {
                             Button(
-                                onClick = { viewModel.onEvent(JugadorEditEvent.OnEliminarClicked) },
+                                onClick = { onEvent(JugadorEditEvent.OnEliminarClicked) },
                                 enabled = !state.isSaving && !state.isDeleting,
                                 modifier = Modifier.weight(1f).height(56.dp),
                                 shape = RoundedCornerShape(12.dp),
@@ -532,6 +543,16 @@ fun JugadorEditScreen(
                                     Text("Eliminar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
                                 }
                             }
+                        }
+                    }
+
+                    if (!state.isNew) {
+                        OutlinedButton(
+                            onClick = { isEditing = false },
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Cancelar Edición", color = TextDark)
                         }
                     }
                 }
@@ -764,5 +785,25 @@ private fun InfoCard(modifier: Modifier = Modifier, title: String, value: String
             Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
             Text(text = subtitle, fontSize = 12.sp, color = TextMuted)
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun JugadorEditScreenPreview() {
+    ProBasketAcademyTheme {
+        JugadorEditContent(
+            state = JugadorEditState(
+                isNew = false,
+                nombre = "William Rodriguez",
+                edad = "20",
+                estatura = "1.85",
+                peso = "80",
+                categoriaNombre = "U-20",
+                numeroCamiseta = "24"
+            ),
+            onEvent = {},
+            onNavigateBack = {}
+        )
     }
 }
