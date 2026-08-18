@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.finanzas.detalle
+package com.probasketacademy.presentacion.pagos.detalle
 
 import com.probasketacademy.domain.model.Pago
 

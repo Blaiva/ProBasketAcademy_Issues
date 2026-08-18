@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.finanzas.detalle
+package com.probasketacademy.presentacion.pagos.detalle
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
