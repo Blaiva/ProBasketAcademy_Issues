@@ -149,6 +149,11 @@ private fun HomeHeader(onProfileClick: () -> Unit) {
                     color = Color.White
                 )
             }
+            val isPreview = androidx.compose.ui.platform.LocalInspectionMode.current
+            val photoUrl = if (!isPreview) {
+                com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.photoUrl?.toString()
+            } else null
+
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -157,12 +162,21 @@ private fun HomeHeader(onProfileClick: () -> Unit) {
                     .clickable { onProfileClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (!photoUrl.isNullOrEmpty()) {
+                    coil3.compose.AsyncImage(
+                        model = photoUrl,
+                        contentDescription = "Perfil",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Perfil",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
