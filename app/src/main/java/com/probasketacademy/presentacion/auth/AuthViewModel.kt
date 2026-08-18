@@ -3,6 +3,7 @@ package com.probasketacademy.presentacion.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.probasketacademy.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,20 +15,24 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
-    init {
-        checkSesion()
+    private val authStateListener = FirebaseAuth.AuthStateListener { auth ->
+        _state.update { it.copy(user = auth.currentUser) }
     }
 
-    private fun checkSesion(){
-        authRepository.getCurrentUser()?.let { user ->
-            _state.update { it.copy(user = user) }
-        }
+    init {
+        firebaseAuth.addAuthStateListener(authStateListener)
+    }
+
+    override fun onCleared() {
+        firebaseAuth.removeAuthStateListener(authStateListener)
+        super.onCleared()
     }
 
     fun proccessIntent(intent: AuthEvent){
