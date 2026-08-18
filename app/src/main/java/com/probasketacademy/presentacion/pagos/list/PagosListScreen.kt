@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.finanzas.list
+package com.probasketacademy.presentacion.pagos.list
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,15 +24,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
-import com.probasketacademy.domain.model.Jugador
+import com.probasketacademy.presentacion.perfil.ProfileDialog
 import com.probasketacademy.ui.theme.*
 
 @Composable
 fun PagosListScreen(
     onNavigateToDetalle: (Long) -> Unit,
+    onLogout: () -> Unit,
     viewModel: PagosListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    if (showProfileDialog) {
+        ProfileDialog(
+            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            onDismiss = { showProfileDialog = false },
+            onLogout = { showProfileDialog = false; onLogout() }
+        )
+    }
 
     Scaffold(containerColor = LightBackground) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
@@ -55,9 +67,15 @@ fun PagosListScreen(
                         Text("ProBasketAcademy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                     Box(
-                        modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.2f), CircleShape),
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .clickable { showProfileDialog = true },
                         contentAlignment = Alignment.Center
-                    ) { Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
+                    ) {
+                        Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
 

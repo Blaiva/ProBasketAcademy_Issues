@@ -31,15 +31,27 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Jugador
+import com.probasketacademy.presentacion.perfil.ProfileDialog
 import com.probasketacademy.ui.theme.* // Importamos todo de tu theme
 
 @Composable
 fun JugadoresListScreen(
     onNavigateToDetail: (Long) -> Unit,
     onAddJugador: () -> Unit,
+    onLogout: () -> Unit,
     viewModel: JugadoresListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    if (showProfileDialog) {
+        ProfileDialog(
+            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            onDismiss = { showProfileDialog = false },
+            onLogout = { showProfileDialog = false; onLogout() }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -89,10 +101,12 @@ fun JugadoresListScreen(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .clickable { showProfileDialog = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }

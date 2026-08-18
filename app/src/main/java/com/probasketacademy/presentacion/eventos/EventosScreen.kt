@@ -32,6 +32,7 @@ import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Evento
+import com.probasketacademy.presentacion.perfil.ProfileDialog
 import com.probasketacademy.ui.theme.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -45,6 +46,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventosScreen(
+    onLogout: () -> Unit,
     viewModel: EventosViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -65,6 +67,16 @@ fun EventosScreen(
     val visibleMonth = calendarState.firstVisibleMonth.yearMonth
     LaunchedEffect(visibleMonth) {
         viewModel.onEvent(EventosEvent.OnVisibleMonthChanged(visibleMonth))
+    }
+
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    if (showProfileDialog) {
+        ProfileDialog(
+            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            onDismiss = { showProfileDialog = false },
+            onLogout = { showProfileDialog = false; onLogout() }
+        )
     }
 
     if (state.showAddDialog) {
@@ -203,9 +215,15 @@ fun EventosScreen(
                             Text("ProBasketAcademy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         Box(
-                            modifier = Modifier.size(36.dp).background(Color.White.copy(alpha = 0.2f), CircleShape),
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .clickable { showProfileDialog = true },
                             contentAlignment = Alignment.Center
-                        ) { Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
+                        ) {
+                            Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))

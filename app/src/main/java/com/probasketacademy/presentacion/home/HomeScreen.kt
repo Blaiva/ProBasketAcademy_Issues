@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Pago
 import com.probasketacademy.presentacion.navegacion.Screen
+import com.probasketacademy.presentacion.perfil.ProfileDialog
 import com.probasketacademy.ui.theme.*
 
 @Composable
@@ -39,12 +40,22 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    if (showProfileDialog) {
+        ProfileDialog(
+            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            onDismiss = { showProfileDialog = false },
+            onLogout = { showProfileDialog = false; onLogout() }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(LightBackgroundHome)
     ) {
-        HomeHeader(onLogout)
+        HomeHeader(onProfileClick = { showProfileDialog = true })
 
         LazyColumn(
             modifier = Modifier
@@ -93,7 +104,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(onLogout: () -> Unit) {
+private fun HomeHeader(onProfileClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -130,14 +141,14 @@ private fun HomeHeader(onLogout: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
                     .clip(CircleShape)
-                    .clickable { onLogout() },
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .clickable { onProfileClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
-                    contentDescription = "Cerrar Sesión",
+                    contentDescription = "Perfil",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
                 )
