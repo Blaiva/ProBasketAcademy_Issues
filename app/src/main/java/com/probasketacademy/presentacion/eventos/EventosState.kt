@@ -11,5 +11,7 @@ data class EventosState(
     val currentYearMonth: YearMonth = YearMonth.now(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val showAddDialog: Boolean = false
+    val showAddDialog: Boolean = false,
+    val eventoSeleccionado: Evento? = null,
+    val showEditDialog: Boolean = false
 )

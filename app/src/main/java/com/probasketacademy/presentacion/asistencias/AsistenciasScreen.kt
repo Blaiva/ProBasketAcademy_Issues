@@ -38,6 +38,7 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciasScreen(
     onNavigateBack: () -> Unit,
@@ -95,154 +96,243 @@ fun AsistenciasScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBackground),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-                        val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "$monthName ${visibleMonth.year}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
-                            Row {
-                                IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) {
-                                    Icon(Icons.Default.ChevronLeft, contentDescription = "Mes Anterior", tint = TextDark)
-                                }
-                                IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.plusMonths(1)) } }) {
-                                    Icon(Icons.Default.ChevronRight, contentDescription = "Mes Siguiente", tint = TextDark)
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            for (day in daysOfWeek) {
-                                Text(text = day, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        HorizontalCalendar(
-                            state = calendarState,
-                            dayContent = { day ->
-                                DayCell(
-                                    day = day,
-                                    isSelected = state.selectedDate == day.date,
-                                    onClick = { viewModel.onEvent(AsistenciasEvent.OnDateSelected(it.date)) }
-                                )
-                            }
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-            item {
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Text("Pase de Lista", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    if (state.isEditable) {
-                        Text("Registrando asistencia para hoy.", fontSize = 14.sp, color = SuccessGreen, fontWeight = FontWeight.Bold)
-                    } else {
-                        Text("Modo lectura: Solo puedes ver la asistencia de este día.", fontSize = 14.sp, color = TextMuted)
+                    Text("Categoría", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextMuted)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    var categoriaExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = categoriaExpanded,
+                        onExpandedChange = { categoriaExpanded = !categoriaExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = state.categoriaSeleccionadaNombre,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Selecciona la categoría") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoriaExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoriaExpanded,
+                            onDismissRequest = { categoriaExpanded = false }
+                        ) {
+                            if (state.categorias.isEmpty()) {
+                                DropdownMenuItem(text = { Text("No hay categorías") }, onClick = {}, enabled = false)
+                            } else {
+                                state.categorias.forEach { cat ->
+                                    DropdownMenuItem(
+                                        text = { Text(cat.nombre) },
+                                        onClick = {
+                                            viewModel.onEvent(AsistenciasEvent.OnCategoriaSelected(cat.id, cat.nombre))
+                                            categoriaExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            if (state.isLoading) {
-                item { Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = HeaderOrange) } }
+
+            if (state.categoriaSeleccionadaId == null) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            "Selecciona una categoría para tomar el pase de lista.",
+                            color = TextMuted,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             } else {
-
-                val presentes = state.jugadores.filter { state.asistencias[it.jugadorId] == true }
-                val ausentes = state.jugadores.filter { state.asistencias[it.jugadorId] != true }
-
-                if (ausentes.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "Por Confirmar / Ausentes (${ausentes.size})",
-                            color = BadgeUrgentText,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                    }
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardBackground),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, BorderColor)
-                        ) {
-                            Column {
-                                ausentes.forEachIndexed { index, jugador ->
-                                    JugadorAsistenciaRow(
-                                        jugador = jugador,
-                                        isChecked = false,
-                                        isEditable = state.isEditable,
-                                        onCheckedChange = { viewModel.onEvent(AsistenciasEvent.OnJugadorToggled(jugador.jugadorId, it)) }
-                                    )
-                                    if (index < ausentes.size - 1) HorizontalDivider(color = DividerColor)
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBackground),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
+                            val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(text = "$monthName ${visibleMonth.year}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+                                Row {
+                                    IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) {
+                                        Icon(Icons.Default.ChevronLeft, contentDescription = "Mes Anterior", tint = TextDark)
+                                    }
+                                    IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.plusMonths(1)) } }) {
+                                        Icon(Icons.Default.ChevronRight, contentDescription = "Mes Siguiente", tint = TextDark)
+                                    }
                                 }
                             }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
-                if (presentes.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "Presentes (${presentes.size})",
-                            color = SuccessGreen,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                    }
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            colors = CardDefaults.cardColors(containerColor = CardBackground),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, BorderColor)
-                        ) {
-                            Column {
-                                presentes.forEachIndexed { index, jugador ->
-                                    JugadorAsistenciaRow(
-                                        jugador = jugador,
-                                        isChecked = true,
-                                        isEditable = state.isEditable,
-                                        onCheckedChange = { viewModel.onEvent(AsistenciasEvent.OnJugadorToggled(jugador.jugadorId, it)) }
-                                    )
-                                    if (index < presentes.size - 1) HorizontalDivider(color = DividerColor)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                for (day in daysOfWeek) {
+                                    Text(text = day, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
                                 }
                             }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
-                if (state.isEditable) {
-                    item {
-                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Button(
-                                onClick = {
-                                    viewModel.onEvent(AsistenciasEvent.OnResetGuardado)
-                                    onNavigateBack()
-                                },
-                                modifier = Modifier.weight(1f).height(56.dp),
-                                shape = RoundedCornerShape(24.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6B6B6B))
-                            ) { Text("Cancelar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White) }
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                            Button(
-                                onClick = { viewModel.onEvent(AsistenciasEvent.OnConfirmarAsistencia) },
-                                modifier = Modifier.weight(1f).height(56.dp),
-                                shape = RoundedCornerShape(24.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
-                            ) { Text("Confirmar\nAsistencia", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White, textAlign = TextAlign.Center) }
+                            HorizontalCalendar(
+                                state = calendarState,
+                                dayContent = { day ->
+                                    DayCell(
+                                        day = day,
+                                        isSelected = state.selectedDate == day.date,
+                                        onClick = { viewModel.onEvent(AsistenciasEvent.OnDateSelected(it.date)) }
+                                    )
+                                }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+                item {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Text("Pase de Lista", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (state.isEditable) {
+                            Text("Registrando asistencia para hoy.", fontSize = 14.sp, color = SuccessGreen, fontWeight = FontWeight.Bold)
+                        } else {
+                            Text("Modo lectura: Solo puedes ver la asistencia de este día.", fontSize = 14.sp, color = TextMuted)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                if (state.isLoading) {
+                    item { Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = HeaderOrange) } }
+                } else {
+
+                    val presentes = state.jugadores.filter { state.asistencias[it.jugadorId] == true }
+                    val ausentes = state.jugadores.filter { state.asistencias[it.jugadorId] != true }
+
+                    if (ausentes.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Por Confirmar / Ausentes (${ausentes.size})",
+                                color = BadgeUrgentText,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, BorderColor)
+                            ) {
+                                Column {
+                                    ausentes.forEachIndexed { index, jugador ->
+                                        JugadorAsistenciaRow(
+                                            jugador = jugador,
+                                            isChecked = false,
+                                            isEditable = state.isEditable,
+                                            onCheckedChange = {
+                                                viewModel.onEvent(
+                                                    AsistenciasEvent.OnJugadorToggled(
+                                                        jugador.jugadorId,
+                                                        it
+                                                    )
+                                                )
+                                            }
+                                        )
+                                        if (index < ausentes.size - 1) HorizontalDivider(color = DividerColor)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+                    if (presentes.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Presentes (${presentes.size})",
+                                color = SuccessGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, BorderColor)
+                            ) {
+                                Column {
+                                    presentes.forEachIndexed { index, jugador ->
+                                        JugadorAsistenciaRow(
+                                            jugador = jugador,
+                                            isChecked = true,
+                                            isEditable = state.isEditable,
+                                            onCheckedChange = {
+                                                viewModel.onEvent(
+                                                    AsistenciasEvent.OnJugadorToggled(
+                                                        jugador.jugadorId,
+                                                        it
+                                                    )
+                                                )
+                                            }
+                                        )
+                                        if (index < presentes.size - 1) HorizontalDivider(color = DividerColor)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+                    if (state.isEditable) {
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        viewModel.onEvent(AsistenciasEvent.OnResetGuardado)
+                                        onNavigateBack()
+                                    },
+                                    modifier = Modifier.weight(1f).height(56.dp),
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(
+                                            0xFF6B6B6B
+                                        )
+                                    )
+                                ) {
+                                    Text(
+                                        "Cancelar",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = Color.White
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { viewModel.onEvent(AsistenciasEvent.OnConfirmarAsistencia) },
+                                    modifier = Modifier.weight(1f).height(56.dp),
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+                                ) {
+                                    Text(
+                                        "Confirmar\nAsistencia",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = Color.White,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
                 }

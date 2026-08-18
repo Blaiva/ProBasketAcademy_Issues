@@ -107,6 +107,62 @@ fun EventosScreen(
         )
     }
 
+    if (state.showEditDialog && state.eventoSeleccionado != null) {
+        val evento = state.eventoSeleccionado!!
+        var titulo by remember(evento.id) { mutableStateOf(evento.titulo) }
+        var tipo by remember(evento.id) { mutableStateOf(evento.tipo) }
+        var horaStr by remember(evento.id) {
+            mutableStateOf(
+                java.time.Instant.ofEpochMilli(evento.fechaHoraEpocaMs)
+                    .atZone(ZoneId.systemDefault()).toLocalTime()
+                    .format(DateTimeFormatter.ofPattern("HH:mm"))
+            )
+        }
+        var duracionStr by remember(evento.id) { mutableStateOf(evento.duracionHoras.toString()) }
+        var lugar by remember(evento.id) { mutableStateOf(evento.lugar) }
+
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(EventosEvent.OnToggleEditDialog) },
+            title = { Text("Editar Evento", fontWeight = FontWeight.Bold, color = TextDark) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    OutlinedTextField(value = tipo, onValueChange = { tipo = it }, label = { Text("Tipo (Partido, Pago, Reunión)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(value = horaStr, onValueChange = { horaStr = it }, label = { Text("Hora (HH:mm)") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+                        OutlinedTextField(value = duracionStr, onValueChange = { duracionStr = it }, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+                    }
+                    OutlinedTextField(value = lugar, onValueChange = { lugar = it }, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+
+                    TextButton(
+                        onClick = { viewModel.onEvent(EventosEvent.OnEliminarEvento) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Eliminar Evento", color = Color.Red, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        try {
+                            val time = LocalTime.parse(horaStr)
+                            val dur = duracionStr.toFloatOrNull() ?: 1f
+                            viewModel.onEvent(EventosEvent.OnActualizarEvento(titulo, tipo, time, dur, lugar))
+                        } catch (e: Exception) { }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+                ) { Text("Guardar Cambios", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onEvent(EventosEvent.OnToggleEditDialog) }) { Text("Cancelar", color = TextMuted) }
+            },
+            containerColor = CardBackground
+        )
+    }
+
     Scaffold(
         floatingActionButton = {
             if (!state.selectedDate.isBefore(today)) {
@@ -257,7 +313,10 @@ fun EventosScreen(
             } else {
                 items(state.eventosDelDia) { evento ->
                     Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                        EventoItemRow(evento = evento)
+                        EventoItemRow(
+                            evento = evento,
+                            onClick = { viewModel.onEvent(EventosEvent.OnEventoClicked(evento)) }
+                        )
                     }
                 }
             }
@@ -309,7 +368,7 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, hasEvent: Bo
 }
 
 @Composable
-fun EventoItemRow(evento: Evento) {
+fun EventoItemRow(evento: Evento, onClick: () -> Unit) {
     val lineColor: Color
     val iconBg: Color
     val iconTint: Color
@@ -359,7 +418,7 @@ fun EventoItemRow(evento: Evento) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

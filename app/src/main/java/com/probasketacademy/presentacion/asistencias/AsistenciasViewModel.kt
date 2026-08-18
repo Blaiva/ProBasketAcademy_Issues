@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Asistencia
 import com.probasketacademy.domain.repository.AsistenciaRepository
 import com.probasketacademy.domain.repository.JugadorRepository
+import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriasConConteoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AsistenciasViewModel @Inject constructor(
     private val jugadorRepository: JugadorRepository,
-    private val asistenciaRepository: AsistenciaRepository
+    private val asistenciaRepository: AsistenciaRepository,
+    private val obtenerCategoriasConConteoUseCase: ObtenerCategoriasConConteoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AsistenciasState())
@@ -26,13 +28,13 @@ class AsistenciasViewModel @Inject constructor(
     private var asistenciasActuales: List<Asistencia> = emptyList()
 
     init {
-        cargarDatosPorFecha(_uiState.value.selectedDate)
+        cargarCategorias()
     }
 
     fun onEvent(event: AsistenciasEvent) {
         when (event) {
             is AsistenciasEvent.OnJugadorToggled -> {
-                if (!_uiState.value.isEditable) return // Bloquea si no es editable
+                if (!_uiState.value.isEditable) return
                 val nuevasAsistencias = _uiState.value.asistencias.toMutableMap()
                 nuevasAsistencias[event.jugadorId] = event.asistio
                 _uiState.update { it.copy(asistencias = nuevasAsistencias) }
@@ -48,10 +50,30 @@ class AsistenciasViewModel @Inject constructor(
             is AsistenciasEvent.OnResetGuardado -> {
                 _uiState.update { it.copy(isSaved = false) }
             }
+            is AsistenciasEvent.OnCategoriaSelected -> {
+                _uiState.update {
+                    it.copy(
+                        categoriaSeleccionadaId = event.id,
+                        categoriaSeleccionadaNombre = event.nombre,
+                        jugadores = emptyList(),
+                        asistencias = emptyMap()
+                    )
+                }
+                cargarDatosPorFecha(_uiState.value.selectedDate)
+            }
+        }
+    }
+
+    private fun cargarCategorias() {
+        viewModelScope.launch {
+            obtenerCategoriasConConteoUseCase().collectLatest { lista ->
+                _uiState.update { it.copy(categorias = lista) }
+            }
         }
     }
 
     private fun cargarDatosPorFecha(date: LocalDate) {
+        val categoriaId = _uiState.value.categoriaSeleccionadaId ?: return
         job?.cancel()
         job = viewModelScope.launch {
             val isToday = date == LocalDate.now()
@@ -60,13 +82,13 @@ class AsistenciasViewModel @Inject constructor(
             val fechaTimestamp = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
             combine(
-                jugadorRepository.obtenerJugadores(),
+                jugadorRepository.obtenerJugadoresPorCategoria(categoriaId),
                 asistenciaRepository.obtenerAsistenciasPorDia(fechaTimestamp)
             ) { jugadores, asistencias ->
-                asistenciasActuales = asistencias // Guardamos para no duplicar en BD al actualizar
+                asistenciasActuales = asistencias.filter { it.categoriaId == categoriaId }
                 val asistenciasMap = jugadores.associate { j ->
                     val asis = asistencias.find { it.jugadorId == j.jugadorId }
-                    j.jugadorId to (asis?.asistio ?: false) // <-- Por defecto, si no hay registro, es FALSE (Ausente)
+                    j.jugadorId to (asis?.asistio ?: false)
                 }
                 _uiState.update {
                     it.copy(isLoading = false, jugadores = jugadores, asistencias = asistenciasMap)
@@ -79,6 +101,7 @@ class AsistenciasViewModel @Inject constructor(
 
     private fun guardarAsistencias() {
         if (!_uiState.value.isEditable) return
+        val categoriaId = _uiState.value.categoriaSeleccionadaId ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val state = _uiState.value
@@ -89,7 +112,7 @@ class AsistenciasViewModel @Inject constructor(
                 Asistencia(
                     id = existente?.id ?: 0L,
                     jugadorId = jugador.jugadorId,
-                    categoriaId = jugador.categoriaId,
+                    categoriaId = categoriaId,
                     fechaEpocaMs = fechaTimestamp,
                     asistio = state.asistencias[jugador.jugadorId] ?: false,
                     nombreJugador = jugador.nombre

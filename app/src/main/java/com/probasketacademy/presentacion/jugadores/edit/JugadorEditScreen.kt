@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
@@ -70,6 +72,20 @@ fun JugadorEditScreen(
                 e.printStackTrace()
             }
             viewModel.onEvent(JugadorEditEvent.OnFotoChanged(uri.toString()))
+        }
+    }
+
+    val pickMediaActa = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            viewModel.onEvent(JugadorEditEvent.OnActaNacimientoChanged(uri.toString()))
         }
     }
 
@@ -416,17 +432,64 @@ fun JugadorEditScreen(
 
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = BorderColor)
 
+                            // --- CAMPO ACTA DE NACIMIENTO ---
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        pickMediaActa.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                    },
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Documentación Completa", color = TextDark, fontWeight = FontWeight.Medium)
-                                Switch(
-                                    checked = state.docCompleta,
-                                    onCheckedChange = { viewModel.onEvent(JugadorEditEvent.OnDocCompletaChanged(it)) },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(LightBackground),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (!state.actaNacimientoUri.isNullOrEmpty()) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(context)
+                                                .data(state.actaNacimientoUri)
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = "Acta de nacimiento",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.AddAPhoto,
+                                            contentDescription = "Subir acta de nacimiento",
+                                            tint = TextMuted,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Acta de Nacimiento", color = TextDark, fontWeight = FontWeight.Medium)
+                                    Text(
+                                        text = if (!state.actaNacimientoUri.isNullOrEmpty())
+                                            "Documento cargado"
+                                        else
+                                            "Toca para subir el documento",
+                                        fontSize = 12.sp,
+                                        color = if (!state.actaNacimientoUri.isNullOrEmpty()) SuccessGreen else TextMuted
+                                    )
+                                }
+
+                                if (!state.actaNacimientoUri.isNullOrEmpty()) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = SuccessGreen,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -469,16 +532,6 @@ fun JugadorEditScreen(
                                     Text("Eliminar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
                                 }
                             }
-                        }
-                    }
-
-                    if (!state.isNew) {
-                        OutlinedButton(
-                            onClick = { isEditing = false },
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Cancelar Edición", color = TextDark)
                         }
                     }
                 }
@@ -637,6 +690,55 @@ fun JugadorEditScreen(
                                     Icon(Icons.Default.Email, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(text = state.tutorCorreo.ifEmpty { "No registrado" }, fontSize = 15.sp, color = TextDark)
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text("Documentación", fontWeight = FontWeight.Bold, color = PrimaryOrange, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("Acta de Nacimiento", fontSize = 13.sp, color = TextMuted, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (!state.actaNacimientoUri.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context)
+                                            .data(state.actaNacimientoUri)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "Acta de nacimiento",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(200.dp)
+                                            .clip(RoundedCornerShape(12.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(120.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(LightBackground),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = TextMuted, modifier = Modifier.size(28.dp))
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text("Documento no cargado", color = TextMuted, fontSize = 12.sp)
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -17,4 +17,7 @@ sealed interface PagosDetalleEvent {
     data object OnRegistrarPago : PagosDetalleEvent
     data object OnRegistrarAbono : PagosDetalleEvent
     data class OnMarcarComoPagado(val pago: Pago) : PagosDetalleEvent
+
+    data class OnToggleSaldarConfirmDialog(val pago: Pago? = null) : PagosDetalleEvent
+    data object OnConfirmarSaldar : PagosDetalleEvent
 }

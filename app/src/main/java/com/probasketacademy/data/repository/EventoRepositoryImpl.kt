@@ -21,4 +21,8 @@ class EventoRepositoryImpl @Inject constructor(private val eventoDao: EventoDao)
         eventoDao.guardarEvento(evento.toEntity())
         return evento.id
     }
+
+    override suspend fun eliminarEvento(id: Long) {
+        eventoDao.eliminarEvento(id)
+    }
 }

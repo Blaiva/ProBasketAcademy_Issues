@@ -170,6 +170,30 @@ fun PagosDetalleScreen(
         )
     }
 
+    if (state.showSaldarConfirmDialog && state.pagoParaSaldar != null) {
+        val pago = state.pagoParaSaldar!!
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog()) },
+            title = { Text("Confirmar Saldo", fontWeight = FontWeight.Bold, color = TextDark) },
+            text = {
+                Text(
+                    "¿Deseas marcar \"${pago.concepto}\" como pagado en su totalidad? Se registrará un abono de $${pago.deuda}.",
+                    color = TextDark
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.onEvent(PagosDetalleEvent.OnConfirmarSaldar) },
+                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+                ) { Text("Confirmar", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog()) }) { Text("Cancelar", color = TextMuted) }
+            },
+            containerColor = CardBackground
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -301,7 +325,7 @@ fun PagosDetalleScreen(
                             items(state.pagos) { pago ->
                                 PagoItemRow(
                                     pago = pago,
-                                    onMarcarPagado = { viewModel.onEvent(PagosDetalleEvent.OnMarcarComoPagado(pago)) },
+                                    onMarcarPagado = { viewModel.onEvent(PagosDetalleEvent.OnToggleSaldarConfirmDialog(pago)) },
                                     onAbonar = { viewModel.onEvent(PagosDetalleEvent.OnToggleAbonoDialog(pago)) }
                                 )
                                 HorizontalDivider(color = DividerColor)
