@@ -2,9 +2,10 @@ package com.probasketacademy.presentacion.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.probasketacademy.domain.repository.AsistenciaRepository
 import com.probasketacademy.domain.repository.JugadorRepository
-import com.probasketacademy.domain.repository.PagoRepository
+import com.probasketacademy.domain.usecase.asistencia.ObtenerAsistenciaPromedioPorMesUseCase
+import com.probasketacademy.domain.usecase.pago.ObtenerCobrosPendientesUseCase
+import com.probasketacademy.domain.usecase.pago.ObtenerIngresosTotalesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,8 +18,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val pagoRepository: PagoRepository,
-    private val asistenciaRepository: AsistenciaRepository,
+    private val obtenerIngresosTotalesUseCase: ObtenerIngresosTotalesUseCase,
+    private val obtenerCobrosPendientesUseCase: ObtenerCobrosPendientesUseCase,
+    private val obtenerAsistenciaPromedioPorMesUseCase: ObtenerAsistenciaPromedioPorMesUseCase,
     private val jugadorRepository: JugadorRepository
 ) : ViewModel() {
 
@@ -31,11 +33,10 @@ class HomeViewModel @Inject constructor(
 
     private fun cargarDatosDelDashboard() {
         _uiState.update { it.copy(isLoading = true) }
+
         val yearMonth = YearMonth.now()
-        val inicioMes =
-            yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val finMes = yearMonth.atEndOfMonth().atTime(LocalTime.MAX).atZone(ZoneId.systemDefault())
-            .toInstant().toEpochMilli()
+        val inicioMes = yearMonth.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val finMes = yearMonth.atEndOfMonth().atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         viewModelScope.launch {
             jugadorRepository.obtenerJugadores().collectLatest { jugadores ->
@@ -45,27 +46,24 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            asistenciaRepository.obtenerAsistenciaPromedioPorMes(inicioMes, finMes)
-                .collectLatest { promedio ->
-                    val promStr = if (promedio != null) "${promedio.toInt()}%" else "0%"
-                    _uiState.update { it.copy(asistenciaPromedio = promStr) }
-                }
+            obtenerAsistenciaPromedioPorMesUseCase(inicioMes, finMes).collectLatest { promedio ->
+                val promStr = if (promedio != null) "${promedio.toInt()}%" else "0%"
+                _uiState.update { it.copy(asistenciaPromedio = promStr) }
+            }
         }
 
         viewModelScope.launch {
-            pagoRepository.obtenerCobrosPendientes().collectLatest { pagosPendientes ->
+            obtenerCobrosPendientesUseCase().collectLatest { pagosPendientes ->
                 _uiState.update { it.copy(cobrosPendientes = pagosPendientes) }
             }
         }
 
         viewModelScope.launch {
-            pagoRepository.obtenerIngresosTotales().collectLatest { total ->
+            obtenerIngresosTotalesUseCase().collectLatest { total ->
                 val ingresos = total ?: 0.0
                 val formatoMoneda = NumberFormat.getNumberInstance(Locale("es", "DO"))
                 val ingresoStr = "$${formatoMoneda.format(ingresos)}"
-                _uiState.update {
-                    it.copy(isLoading = false, ingresosMes = ingresoStr)
-                }
+                _uiState.update { it.copy(isLoading = false, ingresosMes = ingresoStr) }
             }
         }
     }
