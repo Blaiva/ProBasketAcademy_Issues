@@ -11,46 +11,27 @@ interface PagoDao {
     suspend fun registrarPago(pago: PagoEntity)
 
     @Query("""
-        SELECT 
-            p.id AS pagoId,
-            p.jugadorId AS jugadorId,
-            p.concepto AS concepto,
-            p.montoTotal AS montoTotal,
-            p.montoPagado AS montoPagado,
-            p.deuda AS deuda,
-            p.fecha AS fecha,
-            p.estado AS estado,
-            j.nombre AS jugadorNombre,
-            j.numeroCamiseta AS numeroCamiseta
+        SELECT p.id AS pagoId, p.jugadorId AS jugadorId, p.concepto AS concepto,
+            p.montoTotal AS montoTotal, p.montoPagado AS montoPagado, p.deuda AS deuda,
+            p.fecha AS fecha, p.estado AS estado, j.nombre AS jugadorNombre, j.numeroCamiseta AS numeroCamiseta
         FROM pagos p
         INNER JOIN jugadores j ON p.jugadorId = j.jugadorId
-        WHERE p.jugadorId = :jugadorId
+        WHERE p.jugadorId = :jugadorId AND p.userId = :userId
         ORDER BY p.id DESC
     """)
-    fun obtenerPagosPorJugador(jugadorId: Long): Flow<List<PagoConJugadorDto>>
+    fun obtenerPagosPorJugador(jugadorId: Long, userId: String): Flow<List<PagoConJugadorDto>>
 
     @Query("""
-        SELECT 
-            p.id AS pagoId,
-            p.jugadorId AS jugadorId,
-            p.concepto AS concepto,
-            p.montoTotal AS montoTotal,
-            p.montoPagado AS montoPagado,
-            p.deuda AS deuda,
-            p.fecha AS fecha,
-            p.estado AS estado,
-            j.nombre AS jugadorNombre,
-            j.numeroCamiseta AS numeroCamiseta
+        SELECT p.id AS pagoId, p.jugadorId AS jugadorId, p.concepto AS concepto,
+            p.montoTotal AS montoTotal, p.montoPagado AS montoPagado, p.deuda AS deuda,
+            p.fecha AS fecha, p.estado AS estado, j.nombre AS jugadorNombre, j.numeroCamiseta AS numeroCamiseta
         FROM pagos p
         INNER JOIN jugadores j ON p.jugadorId = j.jugadorId
-        WHERE p.estado = 'PENDIENTE' OR p.estado = 'ABONADO'
+        WHERE (p.estado = 'PENDIENTE' OR p.estado = 'ABONADO') AND p.userId = :userId
         ORDER BY p.id DESC
     """)
-    fun obtenerCobrosPendientes(): Flow<List<PagoConJugadorDto>>
+    fun obtenerCobrosPendientes(userId: String): Flow<List<PagoConJugadorDto>>
 
-    @Query("""
-        SELECT SUM(montoPagado) 
-        FROM pagos 
-    """)
-    fun obtenerIngresosTotales(): Flow<Double?>
+    @Query("SELECT SUM(montoPagado) FROM pagos WHERE userId = :userId")
+    fun obtenerIngresosTotales(userId: String): Flow<Double?>
 }

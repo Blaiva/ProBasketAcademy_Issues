@@ -13,12 +13,13 @@ fun EventoEntity.toDomain(): Evento = Evento(
     categoriaId = categoriaId
 )
 
-fun Evento.toEntity(): EventoEntity = EventoEntity(
+fun Evento.toEntity(userId: String): EventoEntity = EventoEntity(
     id = id,
     titulo = titulo,
     tipo = tipo,
     fechaHoraEpocaMs = fechaHoraEpocaMs,
     duracionHoras = duracionHoras,
     lugar = lugar,
-    categoriaId = categoriaId
+    categoriaId = categoriaId,
+    userId = userId
 )

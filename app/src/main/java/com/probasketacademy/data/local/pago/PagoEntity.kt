@@ -27,5 +27,6 @@ data class PagoEntity(
     val montoPagado: Double,
     val deuda: Double,
     val fecha: String,
-    val estado: String
+    val estado: String,
+    val userId: String = ""
 )

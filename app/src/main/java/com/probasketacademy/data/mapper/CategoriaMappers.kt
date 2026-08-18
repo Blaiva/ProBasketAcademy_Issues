@@ -10,7 +10,8 @@ fun CategoriaConConteoDto.toDomain(): Categoria = Categoria(
     totalJugadores = totalJugadores
 )
 
-fun Categoria.toEntity(): CategoriaEntity = CategoriaEntity(
+fun Categoria.toEntity(userId: String): CategoriaEntity = CategoriaEntity(
     id = id,
-    nombre = nombre
+    nombre = nombre,
+    userId = userId
 )

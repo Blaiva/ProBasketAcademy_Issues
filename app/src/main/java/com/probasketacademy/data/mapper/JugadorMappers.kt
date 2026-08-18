@@ -32,7 +32,7 @@ fun JugadorEntity.toDomain(): Jugador = Jugador(
     deudaActual = deudaActual
 )
 
-fun Jugador.toEntity(): JugadorEntity = JugadorEntity(
+fun Jugador.toEntity(userId: String): JugadorEntity = JugadorEntity(
     jugadorId = jugadorId,
     nombre = nombre,
     telefono = telefono,
@@ -57,7 +57,8 @@ fun Jugador.toEntity(): JugadorEntity = JugadorEntity(
     cuota = cuota,
     totalGenerado = totalGenerado,
     totalPagado = totalPagado,
-    deudaActual = deudaActual
+    deudaActual = deudaActual,
+    userId = userId
 )
 
 fun JugadorConCategoriaDto.toDomain(): Jugador = Jugador(
