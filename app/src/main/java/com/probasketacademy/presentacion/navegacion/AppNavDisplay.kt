@@ -36,8 +36,8 @@ import com.probasketacademy.presentacion.categorias.list.CategoriasListScreen
 import com.probasketacademy.presentacion.categorias.detalle.CategoriaDetalleScreen
 import com.probasketacademy.presentacion.asistencias.AsistenciasScreen
 import com.probasketacademy.presentacion.eventos.EventosScreen
-import com.probasketacademy.presentacion.finanzas.list.PagosListScreen
-import com.probasketacademy.presentacion.finanzas.detalle.PagosDetalleScreen
+import com.probasketacademy.presentacion.pagos.list.PagosListScreen
+import com.probasketacademy.presentacion.pagos.detalle.PagosDetalleScreen
 
 import com.probasketacademy.ui.theme.IndicatorColor
 import com.probasketacademy.ui.theme.PrimaryOrange
@@ -55,6 +55,12 @@ fun AppNavDisplay(
     backStack: NavBackStack<NavKey>
 ) {
     val currentScreen = backStack.lastOrNull()
+
+    val doLogout: () -> Unit = {
+        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+        backStack.clear()
+        backStack.add(Screen.Auth)
+    }
 
     val showBottomBar = currentScreen is Screen.Home ||
             currentScreen is Screen.Jugadores ||
@@ -87,21 +93,15 @@ fun AppNavDisplay(
                 entry<Screen.Home> {
                     HomeScreen(
                         onNavigateTo = { route -> backStack.add(route) },
-                        onLogout = {
-                            backStack.clear()
-                            backStack.add(Screen.Auth)
-                        }
+                        onLogout = doLogout
                     )
                 }
 
                 entry<Screen.Jugadores> {
                     JugadoresListScreen(
-                        onNavigateToDetail = { jugadorId ->
-                            backStack.add(Screen.JugadorEdit(jugadorId))
-                        },
-                        onAddJugador = {
-                            backStack.add(Screen.JugadorEdit(0L))
-                        }
+                        onNavigateToDetail = { jugadorId -> backStack.add(Screen.JugadorEdit(jugadorId)) },
+                        onAddJugador = { backStack.add(Screen.JugadorEdit(0L)) },
+                        onLogout = doLogout
                     )
                 }
 
@@ -114,9 +114,8 @@ fun AppNavDisplay(
 
                 entry<Screen.Categorias> {
                     CategoriasListScreen(
-                        onNavigateToVerEditar = { categoriaId ->
-                            backStack.add(Screen.CategoriaDetalle(categoriaId))
-                        }
+                        onNavigateToVerEditar = { categoriaId -> backStack.add(Screen.CategoriaDetalle(categoriaId)) },
+                        onLogout = doLogout
                     )
                 }
 
@@ -129,21 +128,21 @@ fun AppNavDisplay(
 
                 entry<Screen.Asistencias> {
                     AsistenciasScreen(
-                        onNavigateBack = {
-                            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
-                        }
+                        onNavigateBack = { if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) },
+                        onLogout = doLogout
                     )
                 }
 
                 entry<Screen.Eventos> {
-                    EventosScreen()
+                    EventosScreen(
+                        onLogout = doLogout
+                    )
                 }
 
                 entry<Screen.Pagos> {
                     PagosListScreen(
-                        onNavigateToDetalle = { jugadorId ->
-                            backStack.add(Screen.PagosDetalle(jugadorId))
-                        }
+                        onNavigateToDetalle = { jugadorId -> backStack.add(Screen.PagosDetalle(jugadorId)) },
+                        onLogout = doLogout
                     )
                 }
 

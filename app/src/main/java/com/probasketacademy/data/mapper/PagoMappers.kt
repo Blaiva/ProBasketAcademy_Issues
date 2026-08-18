@@ -17,7 +17,7 @@ fun PagoConJugadorDto.toDomain(): Pago = Pago(
     numeroCamiseta = numeroCamiseta
 )
 
-fun Pago.toEntity(): PagoEntity = PagoEntity(
+fun Pago.toEntity(userId: String): PagoEntity = PagoEntity(
     id = id,
     jugadorId = jugadorId,
     concepto = concepto,
@@ -25,5 +25,6 @@ fun Pago.toEntity(): PagoEntity = PagoEntity(
     montoPagado = montoPagado,
     deuda = deuda,
     fecha = fecha,
-    estado = estado
+    estado = estado,
+    userId = userId
 )

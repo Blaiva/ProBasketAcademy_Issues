@@ -44,5 +44,6 @@ data class JugadorEntity(
     val cuota: Double = 0.0,
     val totalGenerado: Double = 0.0,
     val totalPagado: Double = 0.0,
-    val deudaActual: Double = 0.0
+    val deudaActual: Double = 0.0,
+    val userId: String = ""
 )

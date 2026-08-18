@@ -1,5 +1,6 @@
 package com.probasketacademy.data.repository
 
+import com.google.firebase.auth.FirebaseAuth
 import com.probasketacademy.data.local.jugador.JugadorDao
 import com.probasketacademy.data.mapper.toDomain
 import com.probasketacademy.data.mapper.toEntity
@@ -10,38 +11,33 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class JugadorRepositoryImpl @Inject constructor(
-    private val jugadorDao: JugadorDao
+    private val jugadorDao: JugadorDao,
+    private val auth: FirebaseAuth
 ) : JugadorRepository {
 
+    private val userId: String get() = auth.currentUser?.uid ?: ""
+
     override suspend fun guardarJugador(jugador: Jugador) {
-        jugadorDao.guardarJugador(jugador.toEntity())
+        jugadorDao.guardarJugador(jugador.toEntity(userId))
     }
 
     override fun obtenerJugadorPorId(id: Long): Flow<Jugador?> {
-        return jugadorDao.obtenerJugadorConCategoriaPorId(id).map { dto ->
-            dto?.toDomain()
-        }
+        return jugadorDao.obtenerJugadorConCategoriaPorId(id, userId).map { dto -> dto?.toDomain() }
     }
 
     override fun obtenerJugadores(): Flow<List<Jugador>> {
-        return jugadorDao.obtenerJugadoresConCategoria().map { lista ->
-            lista.map { it.toDomain() }
-        }
+        return jugadorDao.obtenerJugadoresConCategoria(userId).map { lista -> lista.map { it.toDomain() } }
     }
 
     override fun obtenerJugadoresPorCategoria(categoriaId: Long): Flow<List<Jugador>> {
-        return jugadorDao.obtenerJugadoresPorCategoria(categoriaId).map { lista ->
-            lista.map { it.toDomain() }
-        }
+        return jugadorDao.obtenerJugadoresPorCategoria(categoriaId, userId).map { lista -> lista.map { it.toDomain() } }
     }
 
     override fun buscarJugadores(query: String): Flow<List<Jugador>> {
-        return jugadorDao.buscarJugadoresConCategoria(query).map { lista ->
-            lista.map { it.toDomain() }
-        }
+        return jugadorDao.buscarJugadoresConCategoria(query, userId).map { lista -> lista.map { it.toDomain() } }
     }
 
     override suspend fun eliminarJugador(jugadorId: Long) {
-        jugadorDao.eliminarJugadorPorId(jugadorId)
+        jugadorDao.eliminarJugadorPorId(jugadorId, userId)
     }
 }

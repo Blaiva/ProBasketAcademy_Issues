@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ProBasketAcademyTheme {
                 AppNavDisplay(
-                    backStack = rememberNavBackStack(Screen.Home)
+                    backStack = rememberNavBackStack(Screen.Auth)
                 )
             }
         }

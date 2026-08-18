@@ -12,5 +12,6 @@ data class EventoEntity(
     val fechaHoraEpocaMs: Long,
     val duracionHoras: Float,
     val lugar: String,
-    val categoriaId: Long? = null
+    val categoriaId: Long? = null,
+    val userId: String = ""
 )

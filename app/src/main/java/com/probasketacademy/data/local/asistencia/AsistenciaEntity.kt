@@ -31,5 +31,6 @@ data class AsistenciaEntity(
     val jugadorId: Long,
     val categoriaId: Long?,
     val fechaEpocaMs: Long,
-    val asistio: Boolean
+    val asistio: Boolean,
+    val userId: String = ""
 )

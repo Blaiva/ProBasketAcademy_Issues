@@ -2,6 +2,7 @@ package com.probasketacademy.presentacion.categorias.list
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,14 +25,26 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Categoria
+import com.probasketacademy.presentacion.perfil.ProfileDialog
 import com.probasketacademy.ui.theme.*
 
 @Composable
 fun CategoriasListScreen(
     onNavigateToVerEditar: (Long) -> Unit,
+    onLogout: () -> Unit,
     viewModel: CategoriasListViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    if (showProfileDialog) {
+        ProfileDialog(
+            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            onDismiss = { showProfileDialog = false },
+            onLogout = { showProfileDialog = false; onLogout() }
+        )
+    }
 
     if (state.showDialog) {
         AlertDialog(
@@ -136,10 +149,12 @@ fun CategoriasListScreen(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .clickable { showProfileDialog = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }

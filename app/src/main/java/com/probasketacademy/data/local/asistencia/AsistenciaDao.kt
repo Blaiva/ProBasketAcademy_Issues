@@ -12,20 +12,17 @@ interface AsistenciaDao {
 
     @Query("""
         SELECT 
-            j.jugadorId AS jugadorId,
-            j.nombre AS nombreJugador,
-            j.fotoUri AS fotoUri,
-            a.asistio AS asistio
+            j.jugadorId AS jugadorId, j.nombre AS nombreJugador, j.fotoUri AS fotoUri, a.asistio AS asistio
         FROM jugadores j
-        LEFT JOIN asistencias a ON j.jugadorId = a.jugadorId AND a.fechaEpocaMs = :fechaTimestamp
-        WHERE j.categoriaId = :categoriaId AND j.estado = 'Activo'
+        LEFT JOIN asistencias a ON j.jugadorId = a.jugadorId AND a.fechaEpocaMs = :fechaTimestamp AND a.userId = :userId
+        WHERE j.categoriaId = :categoriaId AND j.estado = 'Activo' AND j.userId = :userId
         ORDER BY j.nombre ASC
     """)
-    fun obtenerListaAsistenciaPorCategoria(categoriaId: Long, fechaTimestamp: Long): Flow<List<AsistenciaJugadorDto>>
+    fun obtenerListaAsistenciaPorCategoria(categoriaId: Long, fechaTimestamp: Long, userId: String): Flow<List<AsistenciaJugadorDto>>
 
-    @Query("SELECT * FROM asistencias WHERE fechaEpocaMs = :fechaTimestamp")
-    fun obtenerAsistenciasPorDia(fechaTimestamp: Long): Flow<List<AsistenciaEntity>>
+    @Query("SELECT * FROM asistencias WHERE fechaEpocaMs = :fechaTimestamp AND userId = :userId")
+    fun obtenerAsistenciasPorDia(fechaTimestamp: Long, userId: String): Flow<List<AsistenciaEntity>>
 
-    @Query("SELECT AVG(CAST(asistio AS INTEGER)) * 100 FROM asistencias WHERE fechaEpocaMs BETWEEN :inicio AND :fin")
-    fun obtenerAsistenciaPromedioPorMes(inicio: Long, fin: Long): Flow<Double?>
+    @Query("SELECT AVG(CAST(asistio AS INTEGER)) * 100 FROM asistencias WHERE fechaEpocaMs BETWEEN :inicio AND :fin AND userId = :userId")
+    fun obtenerAsistenciaPromedioPorMes(inicio: Long, fin: Long, userId: String): Flow<Double?>
 }

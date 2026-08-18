@@ -21,10 +21,11 @@ fun AsistenciaEntity.toDomain(): Asistencia = Asistencia(
     asistio = asistio
 )
 
-fun Asistencia.toEntity(): AsistenciaEntity = AsistenciaEntity(
+fun Asistencia.toEntity(userId: String): AsistenciaEntity = AsistenciaEntity(
     id = id,
     jugadorId = jugadorId,
     categoriaId = categoriaId,
     fechaEpocaMs = fechaEpocaMs,
-    asistio = asistio
+    asistio = asistio,
+    userId = userId
 )

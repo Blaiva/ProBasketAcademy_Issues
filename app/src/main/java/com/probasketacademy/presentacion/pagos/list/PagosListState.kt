@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.finanzas.list
+package com.probasketacademy.presentacion.pagos.list
 
 import com.probasketacademy.domain.model.Jugador
 
