@@ -18,13 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriaDetalleScreen(
     categoriaId: Long,
@@ -37,45 +37,6 @@ fun CategoriaDetalleScreen(
         viewModel.onEvent(CategoriaDetalleEvent.OnCargarDetalle(categoriaId))
     }
 
-    if (state.showSaveSuccessDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.onEvent(CategoriaDetalleEvent.OnShowSaveSuccessDialogChanged(false)) },
-            title = { Text("Guardado Exitoso", fontWeight = FontWeight.Bold, color = TextDark) },
-            text = { Text("La categoría se ha actualizado correctamente.", color = TextDark) },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnShowSaveSuccessDialogChanged(false)) },
-                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
-                ) {
-                    Text("Aceptar", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            },
-            containerColor = CardBackground
-        )
-    }
-    if (state.showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.onEvent(CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged(false)) },
-            title = { Text("Eliminar Categoría", fontWeight = FontWeight.Bold, color = TextDark) },
-            text = { Text("¿Estás seguro de que deseas eliminar esta categoría? Los jugadores asignados quedarán sin categoría.", color = TextDark) },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnEliminarCategoria) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                ) {
-                    Text("Eliminar", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged(false)) }
-                ) {
-                    Text("Cancelar", color = TextMuted)
-                }
-            },
-            containerColor = CardBackground
-        )
-    }
     if (state.showDeleteSuccessDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -99,12 +60,59 @@ fun CategoriaDetalleScreen(
         )
     }
 
+    CategoriaDetalleContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onNavigateBack = onNavigateBack
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategoriaDetalleContent(
+    state: CategoriaDetalleState,
+    onEvent: (CategoriaDetalleEvent) -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    if (state.showSaveSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { onEvent(CategoriaDetalleEvent.OnShowSaveSuccessDialogChanged(false)) },
+            title = { Text("Guardado Exitoso", fontWeight = FontWeight.Bold, color = TextDark) },
+            text = { Text("La categoría se ha actualizado correctamente.", color = TextDark) },
+            confirmButton = {
+                Button(
+                    onClick = { onEvent(CategoriaDetalleEvent.OnShowSaveSuccessDialogChanged(false)) },
+                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+                ) { Text("Aceptar", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            containerColor = CardBackground
+        )
+    }
+
+    if (state.showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { onEvent(CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged(false)) },
+            title = { Text("Eliminar Categoría", fontWeight = FontWeight.Bold, color = TextDark) },
+            text = { Text("¿Estás seguro de que deseas eliminar esta categoría? Los jugadores asignados quedarán sin categoría.", color = TextDark) },
+            confirmButton = {
+                Button(
+                    onClick = { onEvent(CategoriaDetalleEvent.OnEliminarCategoria) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) { Text("Eliminar", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { onEvent(CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged(false)) }
+                ) { Text("Cancelar", color = TextMuted) }
+            },
+            containerColor = CardBackground
+        )
+    }
+
     if (state.showAddJugadoresDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.onEvent(CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged(false)) },
-            title = {
-                Text("Agregar Jugadores", fontWeight = FontWeight.Bold, color = TextDark)
-            },
+            onDismissRequest = { onEvent(CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged(false)) },
+            title = { Text("Agregar Jugadores", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 if (state.jugadoresSinCategoria.isEmpty()) {
                     Text("No hay jugadores sin categoría disponibles.", color = TextMuted)
@@ -118,26 +126,17 @@ fun CategoriaDetalleScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        viewModel.onEvent(CategoriaDetalleEvent.OnJugadorSelectionToggled(jugador.jugadorId))
-                                    }
+                                    .clickable { onEvent(CategoriaDetalleEvent.OnJugadorSelectionToggled(jugador.jugadorId)) }
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Checkbox(
                                     checked = isSelected,
-                                    onCheckedChange = {
-                                        viewModel.onEvent(CategoriaDetalleEvent.OnJugadorSelectionToggled(jugador.jugadorId))
-                                    },
+                                    onCheckedChange = { onEvent(CategoriaDetalleEvent.OnJugadorSelectionToggled(jugador.jugadorId)) },
                                     colors = CheckboxDefaults.colors(checkedColor = HeaderOrange)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = jugador.nombre,
-                                    fontSize = 14.sp,
-                                    color = TextDark,
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Text(text = jugador.nombre, fontSize = 14.sp, color = TextDark, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -145,7 +144,7 @@ fun CategoriaDetalleScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnAsignarJugadoresSeleccionados) },
+                    onClick = { onEvent(CategoriaDetalleEvent.OnAsignarJugadoresSeleccionados) },
                     enabled = state.selectedJugadoresIds.isNotEmpty() && !state.isAssigning,
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) {
@@ -158,10 +157,8 @@ fun CategoriaDetalleScreen(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged(false)) }
-                ) {
-                    Text("Cancelar", color = TextMuted)
-                }
+                    onClick = { onEvent(CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged(false)) }
+                ) { Text("Cancelar", color = TextMuted) }
             },
             containerColor = CardBackground
         )
@@ -211,7 +208,7 @@ fun CategoriaDetalleScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             OutlinedTextField(
                                 value = state.nombreCategoria,
-                                onValueChange = { viewModel.onEvent(CategoriaDetalleEvent.OnNombreCategoriaChanged(it)) },
+                                onValueChange = { onEvent(CategoriaDetalleEvent.OnNombreCategoriaChanged(it)) },
                                 label = { Text("Nombre de la categoría") },
                                 isError = state.nombreError != null,
                                 singleLine = true,
@@ -234,7 +231,7 @@ fun CategoriaDetalleScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Button(
-                                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnGuardarNombreCategoria) },
+                                    onClick = { onEvent(CategoriaDetalleEvent.OnGuardarNombreCategoria) },
                                     modifier = Modifier.weight(1f).height(44.dp),
                                     enabled = !state.isSavingNombre,
                                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange),
@@ -247,7 +244,7 @@ fun CategoriaDetalleScreen(
                                     }
                                 }
                                 OutlinedButton(
-                                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged(true)) },
+                                    onClick = { onEvent(CategoriaDetalleEvent.OnShowDeleteConfirmDialogChanged(true)) },
                                     modifier = Modifier.weight(1f).height(44.dp),
                                     shape = RoundedCornerShape(8.dp),
                                     border = BorderStroke(1.dp, Color.Red),
@@ -272,7 +269,7 @@ fun CategoriaDetalleScreen(
                             color = TextDark
                         )
                         Button(
-                            onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged(true)) },
+                            onClick = { onEvent(CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged(true)) },
                             colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             shape = RoundedCornerShape(8.dp)
@@ -298,7 +295,7 @@ fun CategoriaDetalleScreen(
                     items(state.jugadoresAsignados) { jugador ->
                         JugadorDetalleRow(
                             jugador = jugador,
-                            onRemove = { viewModel.onEvent(CategoriaDetalleEvent.OnRemoverJugador(jugador)) }
+                            onRemove = { onEvent(CategoriaDetalleEvent.OnRemoverJugador(jugador)) }
                         )
                     }
                 }
@@ -344,5 +341,23 @@ private fun JugadorDetalleRow(
                 Icon(Icons.Default.Delete, contentDescription = "Remover", tint = Color.Red)
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CategoriaDetalleScreenPreview() {
+    ProBasketAcademyTheme {
+        CategoriaDetalleContent(
+            state = CategoriaDetalleState(
+                nombreCategoria = "U-20",
+                jugadoresAsignados = listOf(
+                    Jugador(nombre = "William Rodriguez"),
+                    Jugador(nombre = "Juan Perez")
+                )
+            ),
+            onEvent = {},
+            onNavigateBack = {}
+        )
     }
 }
