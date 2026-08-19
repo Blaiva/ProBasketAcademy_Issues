@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.model.Pago
+import com.probasketacademy.presentacion.finanzas.detalle.PagosDetalleViewModel
 import com.probasketacademy.ui.theme.*
 
 @Composable

@@ -3,7 +3,9 @@ package com.probasketacademy.presentacion.eventos
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Evento
-import com.probasketacademy.domain.repository.EventoRepository
+import com.probasketacademy.domain.usecase.evento.EliminarEventoUseCase
+import com.probasketacademy.domain.usecase.evento.GuardarEventoUseCase
+import com.probasketacademy.domain.usecase.evento.ObtenerEventosPorDiaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
@@ -17,7 +19,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EventosViewModel @Inject constructor(
-    private val eventoRepository: EventoRepository
+    private val obtenerEventosPorDiaUseCase: ObtenerEventosPorDiaUseCase,
+    private val guardarEventoUseCase: GuardarEventoUseCase,
+    private val eliminarEventoUseCase: EliminarEventoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EventosState())
@@ -44,9 +48,7 @@ class EventosViewModel @Inject constructor(
             is EventosEvent.OnToggleAddDialog -> {
                 _uiState.update { it.copy(showAddDialog = !it.showAddDialog) }
             }
-            is EventosEvent.OnGuardarEvento -> {
-                guardarEvento(event)
-            }
+            is EventosEvent.OnGuardarEvento -> guardarEvento(event)
             is EventosEvent.OnEventoClicked -> {
                 _uiState.update { it.copy(eventoSeleccionado = event.evento, showEditDialog = true) }
             }
@@ -70,37 +72,30 @@ class EventosViewModel @Inject constructor(
             val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val endOfDay = date.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            eventoRepository.obtenerEventosPorDia(startOfDay, endOfDay)
+            obtenerEventosPorDiaUseCase(startOfDay, endOfDay)
                 .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
-                .collect { eventos ->
-                    _uiState.update { it.copy(isLoading = false, eventosDelDia = eventos) }
-                }
+                .collect { eventos -> _uiState.update { it.copy(isLoading = false, eventosDelDia = eventos) } }
         }
     }
 
     private fun cargarEventosDelMes(yearMonth: YearMonth) {
         monthJob?.cancel()
         monthJob = viewModelScope.launch {
-            // Buscamos desde el mes anterior hasta el siguiente para cubrir toda la vista de la cuadrícula
             val startOfMonth = yearMonth.minusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val endOfMonth = yearMonth.plusMonths(1).atEndOfMonth().atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            eventoRepository.obtenerEventosPorDia(startOfMonth, endOfMonth)
-                .collect { eventos ->
-                    // Extraemos solo las fechas únicas que tienen al menos un evento
-                    val dias = eventos.map {
-                        java.time.Instant.ofEpochMilli(it.fechaHoraEpocaMs).atZone(ZoneId.systemDefault()).toLocalDate()
-                    }.toSet()
-
-                    _uiState.update { it.copy(diasConEventos = dias) }
-                }
+            obtenerEventosPorDiaUseCase(startOfMonth, endOfMonth).collect { eventos ->
+                val dias = eventos.map {
+                    java.time.Instant.ofEpochMilli(it.fechaHoraEpocaMs).atZone(ZoneId.systemDefault()).toLocalDate()
+                }.toSet()
+                _uiState.update { it.copy(diasConEventos = dias) }
+            }
         }
     }
 
     private fun guardarEvento(event: EventosEvent.OnGuardarEvento) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-
             val selectedDate = _uiState.value.selectedDate
             val dateTime = LocalDateTime.of(selectedDate, event.time)
             val epochMs = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -113,10 +108,13 @@ class EventosViewModel @Inject constructor(
                 lugar = event.lugar
             )
 
-            eventoRepository.guardarEvento(nuevoEvento)
-            _uiState.update { it.copy(showAddDialog = false) }
-            cargarEventosDelDia(selectedDate)
-            cargarEventosDelMes(_uiState.value.currentYearMonth)
+            guardarEventoUseCase(nuevoEvento)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false, showAddDialog = false, errorMessage = null) }
+                    cargarEventosDelDia(selectedDate)
+                    cargarEventosDelMes(_uiState.value.currentYearMonth)
+                }
+                .onFailure { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
         }
     }
 
@@ -134,17 +132,20 @@ class EventosViewModel @Inject constructor(
                 lugar = event.lugar
             )
 
-            eventoRepository.guardarEvento(eventoActualizado)
-            _uiState.update { it.copy(showEditDialog = false, eventoSeleccionado = null) }
-            cargarEventosDelDia(_uiState.value.selectedDate)
-            cargarEventosDelMes(_uiState.value.currentYearMonth)
+            guardarEventoUseCase(eventoActualizado)
+                .onSuccess {
+                    _uiState.update { it.copy(showEditDialog = false, eventoSeleccionado = null) }
+                    cargarEventosDelDia(_uiState.value.selectedDate)
+                    cargarEventosDelMes(_uiState.value.currentYearMonth)
+                }
+                .onFailure { e -> _uiState.update { it.copy(errorMessage = e.message) } }
         }
     }
 
     private fun eliminarEvento() {
         val evento = _uiState.value.eventoSeleccionado ?: return
         viewModelScope.launch {
-            eventoRepository.eliminarEvento(evento.id)
+            eliminarEventoUseCase(evento.id)
             _uiState.update { it.copy(showEditDialog = false, eventoSeleccionado = null) }
             cargarEventosDelDia(_uiState.value.selectedDate)
             cargarEventosDelMes(_uiState.value.currentYearMonth)

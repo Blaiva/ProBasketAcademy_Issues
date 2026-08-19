@@ -3,8 +3,9 @@ package com.probasketacademy.presentacion.asistencias
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Asistencia
-import com.probasketacademy.domain.repository.AsistenciaRepository
-import com.probasketacademy.domain.repository.JugadorRepository
+import com.probasketacademy.domain.model.Jugador
+import com.probasketacademy.domain.usecase.asistencia.ObtenerListaAsistenciaPorCategoriaUseCase
+import com.probasketacademy.domain.usecase.asistencia.RegistrarAsistenciasUseCase
 import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriasConConteoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -16,8 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AsistenciasViewModel @Inject constructor(
-    private val jugadorRepository: JugadorRepository,
-    private val asistenciaRepository: AsistenciaRepository,
+    private val obtenerListaAsistenciaPorCategoriaUseCase: ObtenerListaAsistenciaPorCategoriaUseCase,
+    private val registrarAsistenciasUseCase: RegistrarAsistenciasUseCase,
     private val obtenerCategoriasConConteoUseCase: ObtenerCategoriasConConteoUseCase
 ) : ViewModel() {
 
@@ -81,21 +82,23 @@ class AsistenciasViewModel @Inject constructor(
 
             val fechaTimestamp = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-            combine(
-                jugadorRepository.obtenerJugadoresPorCategoria(categoriaId),
-                asistenciaRepository.obtenerAsistenciasPorDia(fechaTimestamp)
-            ) { jugadores, asistencias ->
-                asistenciasActuales = asistencias.filter { it.categoriaId == categoriaId }
-                val asistenciasMap = jugadores.associate { j ->
-                    val asis = asistencias.find { it.jugadorId == j.jugadorId }
-                    j.jugadorId to (asis?.asistio ?: false)
+            obtenerListaAsistenciaPorCategoriaUseCase(categoriaId, fechaTimestamp)
+                .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
+                .collect { lista ->
+                    asistenciasActuales = lista
+                    val jugadoresDeLista = lista.map {
+                        Jugador(
+                            jugadorId = it.jugadorId,
+                            nombre = it.nombreJugador,
+                            fotoUri = it.fotoUri,
+                            categoriaId = categoriaId
+                        )
+                    }
+                    val asistenciasMap = lista.associate { it.jugadorId to it.asistio }
+                    _uiState.update {
+                        it.copy(isLoading = false, jugadores = jugadoresDeLista, asistencias = asistenciasMap)
+                    }
                 }
-                _uiState.update {
-                    it.copy(isLoading = false, jugadores = jugadores, asistencias = asistenciasMap)
-                }
-            }.catch { e ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message) }
-            }.collect()
         }
     }
 
@@ -119,8 +122,9 @@ class AsistenciasViewModel @Inject constructor(
                 )
             }
 
-            asistenciaRepository.registrarAsistencias(registros)
-            _uiState.update { it.copy(isLoading = false, isSaved = true) }
+            registrarAsistenciasUseCase(registros)
+                .onSuccess { _uiState.update { it.copy(isLoading = false, isSaved = true) } }
+                .onFailure { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
         }
     }
 }
