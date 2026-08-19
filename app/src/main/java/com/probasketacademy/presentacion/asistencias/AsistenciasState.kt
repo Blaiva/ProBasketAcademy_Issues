@@ -15,6 +15,7 @@ data class AsistenciasState(
     val selectedDate: LocalDate = LocalDate.now(),
     val currentYearMonth: YearMonth = YearMonth.now(),
     val isEditable: Boolean = true,
-    val isSaved: Boolean = false,
+    val showQuitarConfirmDialog: Boolean = false,
+    val jugadorParaQuitar: Jugador? = null,
     val errorMessage: String? = null
 )
