@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +30,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import com.google.firebase.auth.FirebaseAuth
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Pago
 import com.probasketacademy.presentacion.navegacion.Screen
@@ -44,29 +50,18 @@ fun HomeScreen(
 
     if (showProfileDialog) {
         ProfileDialog(
-            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            user = FirebaseAuth.getInstance().currentUser,
             onDismiss = { showProfileDialog = false },
             onLogout = { showProfileDialog = false; onLogout() }
         )
     }
 
-    HomeContent(
-        state = state,
-        onProfileClick = { showProfileDialog = true }
-    )
-}
-
-@Composable
-fun HomeContent(
-    state: HomeState,
-    onProfileClick: () -> Unit
-) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(LightBackgroundHome)
     ) {
-        HomeHeader(onProfileClick = onProfileClick)
+        HomeHeader(onProfileClick = { showProfileDialog = true })
 
         LazyColumn(
             modifier = Modifier
@@ -85,7 +80,8 @@ fun HomeContent(
                     trendText = "Registrados en el sistema",
                     trendColor = TextMuted,
                     icon = Icons.Default.Group,
-                    iconColor = PrimaryOrange
+                    iconColor = PrimaryOrange,
+                    onClick = { onNavigateTo(Screen.Jugadores) }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 StatCard(
@@ -94,21 +90,26 @@ fun HomeContent(
                     trendText = "Este mes",
                     trendColor = TextMuted,
                     icon = Icons.Default.CalendarMonth,
-                    iconColor = BlueIcon
+                    iconColor = BlueIcon,
+                    onClick = { onNavigateTo(Screen.Asistencias) }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 StatCard(
-                    title = "INGRESOS DEL AÑO",
+                    title = "INGRESOS TOTALES",
                     value = state.ingresosMes,
-                    trendText = "Total acumulado anual",
+                    trendText = "Pagos recolectados",
                     trendColor = SuccessGreen,
                     icon = Icons.Default.Payments,
-                    iconColor = GreenTrend
+                    iconColor = GreenTrend,
+                    onClick = { onNavigateTo(Screen.Pagos) }
                 )
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                PendingPaymentsSection(pagos = state.cobrosPendientes)
+                PendingPaymentsSection(
+                    pagos = state.cobrosPendientes,
+                    onClick = { onNavigateTo(Screen.Pagos) }
+                )
             }
         }
     }
@@ -149,11 +150,6 @@ private fun HomeHeader(onProfileClick: () -> Unit) {
                     color = Color.White
                 )
             }
-            val isPreview = androidx.compose.ui.platform.LocalInspectionMode.current
-            val photoUrl = if (!isPreview) {
-                com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.photoUrl?.toString()
-            } else null
-
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -162,21 +158,12 @@ private fun HomeHeader(onProfileClick: () -> Unit) {
                     .clickable { onProfileClick() },
                 contentAlignment = Alignment.Center
             ) {
-                if (!photoUrl.isNullOrEmpty()) {
-                    coil3.compose.AsyncImage(
-                        model = photoUrl,
-                        contentDescription = "Perfil",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Perfil",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Perfil",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
@@ -185,17 +172,8 @@ private fun HomeHeader(onProfileClick: () -> Unit) {
 @Composable
 private fun HomeTitleSection() {
     Column {
-        Text(
-            text = "Panel de control",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = TextDark
-        )
-        Text(
-            text = "Resumen general de la academia",
-            fontSize = 14.sp,
-            color = TextMuted
-        )
+        Text(text = "Panel de control", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+        Text(text = "Resumen general de la academia", fontSize = 14.sp, color = TextMuted)
     }
 }
 
@@ -206,9 +184,11 @@ private fun StatCard(
     trendText: String,
     trendColor: Color,
     icon: ImageVector,
-    iconColor: Color
+    iconColor: Color,
+    onClick: () -> Unit
 ) {
     Card(
+        onClick = onClick,
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -220,45 +200,28 @@ private fun StatCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = title,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextMuted,
-                    letterSpacing = 1.sp
-                )
+                Text(text = title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMuted, letterSpacing = 1.sp)
                 Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(iconColor.copy(alpha = 0.1f), CircleShape),
+                    modifier = Modifier.size(36.dp).background(iconColor.copy(alpha = 0.1f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = TextDark
-            )
+            Text(text = value, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
             Spacer(modifier = Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = trendText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = trendColor
-                )
+                Text(text = trendText, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = trendColor)
             }
         }
     }
 }
 
 @Composable
-private fun PendingPaymentsSection(pagos: List<Pago>) {
+private fun PendingPaymentsSection(pagos: List<Pago>, onClick: () -> Unit) {
     Card(
+        onClick = onClick,
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -282,12 +245,7 @@ private fun PendingPaymentsSection(pagos: List<Pago>) {
                             .background(BadgeUrgentBg, RoundedCornerShape(12.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text(
-                            text = "Urgente",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = BadgeUrgentText
-                        )
+                        Text(text = "Urgente", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = BadgeUrgentText)
                     }
                 }
             }
@@ -308,15 +266,13 @@ private fun PendingPaymentsSection(pagos: List<Pago>) {
                     PendingPaymentItemRow(pago)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DividerColor)
                 }
-                OutlinedButton(
-                    onClick = { /* Navegar a una vista de todos los cobros a futuro */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Text("Ver todos los pendientes (${pagos.size})", color = TextDark, fontWeight = FontWeight.Medium)
-                }
+                Text(
+                    text = "Toca para ver todos los pendientes (${pagos.size})",
+                    color = TextMuted,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                )
             }
         }
     }
@@ -324,15 +280,14 @@ private fun PendingPaymentsSection(pagos: List<Pago>) {
 
 @Composable
 private fun PendingPaymentItemRow(pago: Pago) {
+    val context = LocalContext.current
     val initials = pago.jugadorNombre.split(" ").take(2).joinToString("") { it.take(1).uppercase() }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(DividerColor, CircleShape),
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(DividerColor),
             contentAlignment = Alignment.Center
         ) {
             Text(text = initials, fontWeight = FontWeight.Bold, color = TextDark, fontSize = 14.sp)
@@ -343,29 +298,8 @@ private fun PendingPaymentItemRow(pago: Pago) {
             Text(text = pago.concepto, fontSize = 12.sp, color = TextMuted)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = "$${pago.montoTotal.toInt()}",
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = PrimaryOrange
-            )
+            Text(text = "$${pago.montoTotal.toInt()}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = PrimaryOrange)
             Text(text = pago.fecha, fontSize = 10.sp, color = TextMuted)
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    ProBasketAcademyTheme {
-        HomeContent(
-            state = HomeState(
-                jugadoresActivos = 145,
-                asistenciaPromedio = "91%",
-                ingresosMes = "$ 6,200",
-                cobrosPendientes = emptyList()
-            ),
-            onProfileClick = {}
-        )
     }
 }
