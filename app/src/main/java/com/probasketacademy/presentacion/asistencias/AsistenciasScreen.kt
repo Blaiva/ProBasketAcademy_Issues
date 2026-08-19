@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -25,6 +27,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.google.firebase.auth.FirebaseAuth
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
@@ -40,6 +46,7 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciasScreen(
     onNavigateBack: () -> Unit,
@@ -47,40 +54,17 @@ fun AsistenciasScreen(
     viewModel: AsistenciasViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
     var showProfileDialog by remember { mutableStateOf(false) }
 
     if (showProfileDialog) {
         ProfileDialog(
-            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            user = FirebaseAuth.getInstance().currentUser,
             onDismiss = { showProfileDialog = false },
             onLogout = { showProfileDialog = false; onLogout() }
         )
     }
 
-    LaunchedEffect(state.isSaved) {
-        if (state.isSaved) {
-            viewModel.onEvent(AsistenciasEvent.OnResetGuardado)
-            onNavigateBack()
-        }
-    }
-
-    AsistenciasContent(
-        state = state,
-        onEvent = viewModel::onEvent,
-        onNavigateBack = onNavigateBack,
-        onProfileClick = { showProfileDialog = true }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AsistenciasContent(
-    state: AsistenciasState,
-    onEvent: (AsistenciasEvent) -> Unit,
-    onNavigateBack: () -> Unit,
-    onProfileClick: () -> Unit
-) {
-    val coroutineScope = rememberCoroutineScope()
     val currentMonth = remember { YearMonth.now() }
     val startMonth = remember { currentMonth.minusMonths(24) }
     val endMonth = remember { currentMonth.plusMonths(24) }
@@ -92,15 +76,34 @@ fun AsistenciasContent(
         firstVisibleMonth = currentMonth,
         firstDayOfWeek = firstDayOfWeek
     )
-    val visibleMonth = calendarState.firstVisibleMonth.yearMonth
 
+    val visibleMonth = calendarState.firstVisibleMonth.yearMonth
     LaunchedEffect(visibleMonth) {
-        onEvent(AsistenciasEvent.OnVisibleMonthChanged(visibleMonth))
+        viewModel.onEvent(AsistenciasEvent.OnVisibleMonthChanged(visibleMonth))
+    }
+
+    if (state.showQuitarConfirmDialog && state.jugadorParaQuitar != null) {
+        val jugador = state.jugadorParaQuitar!!
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(AsistenciasEvent.OnCancelarQuitarAsistencia) },
+            title = { Text("Quitar Asistencia", fontWeight = FontWeight.Bold, color = TextDark) },
+            text = { Text("¿Deseas quitar la asistencia registrada de ${jugador.nombre} para hoy?", color = TextDark) },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.onEvent(AsistenciasEvent.OnConfirmarQuitarAsistencia) },
+                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+                ) { Text("Quitar", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onEvent(AsistenciasEvent.OnCancelarQuitarAsistencia) }) { Text("Cancelar", color = TextMuted) }
+            },
+            containerColor = CardBackground
+        )
     }
 
     Scaffold(containerColor = LightBackground) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()),
+            modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
             item {
@@ -115,40 +118,21 @@ fun AsistenciasContent(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("ProBasketAcademy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
-
-                        val isPreview = androidx.compose.ui.platform.LocalInspectionMode.current
-                        val photoUrl = if (!isPreview) {
-                            com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.photoUrl?.toString()
-                        } else null
-
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.2f))
-                                .clickable { onProfileClick() },
+                                .clickable { showProfileDialog = true },
                             contentAlignment = Alignment.Center
                         ) {
-                            if (!photoUrl.isNullOrEmpty()) {
-                                coil3.compose.AsyncImage(
-                                    model = photoUrl,
-                                    contentDescription = "Perfil",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Perfil",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                            Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
+
             item {
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     Text("Categoría", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = TextMuted)
@@ -178,7 +162,7 @@ fun AsistenciasContent(
                                     DropdownMenuItem(
                                         text = { Text(cat.nombre) },
                                         onClick = {
-                                            onEvent(AsistenciasEvent.OnCategoriaSelected(cat.id, cat.nombre))
+                                            viewModel.onEvent(AsistenciasEvent.OnCategoriaSelected(cat.id, cat.nombre))
                                             categoriaExpanded = false
                                         }
                                     )
@@ -189,160 +173,154 @@ fun AsistenciasContent(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
+
             if (state.categoriaSeleccionadaId == null) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        Text("Selecciona una categoría para tomar el pase de lista.", color = TextMuted, textAlign = TextAlign.Center)
+                        Text(
+                            "Selecciona una categoría para tomar el pase de lista.",
+                            color = TextMuted,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
-            } else {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        colors = CardDefaults.cardColors(containerColor = CardBackground),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-                            val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = "$monthName ${visibleMonth.year}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
-                                Row {
-                                    IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) {
-                                        Icon(Icons.Default.ChevronLeft, contentDescription = "Mes Anterior", tint = TextDark)
-                                    }
-                                    IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.plusMonths(1)) } }) {
-                                        Icon(Icons.Default.ChevronRight, contentDescription = "Mes Siguiente", tint = TextDark)
-                                    }
+                return@LazyColumn
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = CardBackground),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
+                        val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "$monthName ${visibleMonth.year}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+                            Row {
+                                IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) {
+                                    Icon(Icons.Default.ChevronLeft, contentDescription = "Mes Anterior", tint = TextDark)
+                                }
+                                IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.plusMonths(1)) } }) {
+                                    Icon(Icons.Default.ChevronRight, contentDescription = "Mes Siguiente", tint = TextDark)
                                 }
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                for (day in daysOfWeek) {
-                                    Text(text = day, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            HorizontalCalendar(
-                                state = calendarState,
-                                dayContent = { day ->
-                                    DayCell(
-                                        day = day,
-                                        isSelected = state.selectedDate == day.date,
-                                        onClick = { onEvent(AsistenciasEvent.OnDateSelected(it.date)) }
-                                    )
-                                }
-                            )
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            for (day in daysOfWeek) {
+                                Text(text = day, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        HorizontalCalendar(
+                            state = calendarState,
+                            dayContent = { day ->
+                                DayCell(
+                                    day = day,
+                                    isSelected = state.selectedDate == day.date,
+                                    onClick = { viewModel.onEvent(AsistenciasEvent.OnDateSelected(it.date)) }
+                                )
+                            }
+                        )
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
                 }
-                item {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        Text("Pase de Lista", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        if (state.isEditable) {
-                            Text("Registrando asistencia para hoy.", fontSize = 14.sp, color = SuccessGreen, fontWeight = FontWeight.Bold)
-                        } else {
-                            Text("Modo lectura: Solo puedes ver la asistencia de este día.", fontSize = 14.sp, color = TextMuted)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                if (state.isLoading) {
-                    item { Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = HeaderOrange) } }
-                } else {
-                    val presentes = state.jugadores.filter { state.asistencias[it.jugadorId] == true }
-                    val ausentes = state.jugadores.filter { state.asistencias[it.jugadorId] != true }
-                    if (ausentes.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = "Por Confirmar / Ausentes (${ausentes.size})",
-                                color = BadgeUrgentText,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            )
-                        }
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                                colors = CardDefaults.cardColors(containerColor = CardBackground),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, BorderColor)
-                            ) {
-                                Column {
-                                    ausentes.forEachIndexed { index, jugador ->
-                                        JugadorAsistenciaRow(
-                                            jugador = jugador,
-                                            isChecked = false,
-                                            isEditable = state.isEditable,
-                                            onCheckedChange = { onEvent(AsistenciasEvent.OnJugadorToggled(jugador.jugadorId, it)) }
-                                        )
-                                        if (index < ausentes.size - 1) HorizontalDivider(color = DividerColor)
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                    }
-                    if (presentes.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = "Presentes (${presentes.size})",
-                                color = SuccessGreen,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            )
-                        }
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                                colors = CardDefaults.cardColors(containerColor = CardBackground),
-                                shape = RoundedCornerShape(12.dp),
-                                border = BorderStroke(1.dp, BorderColor)
-                            ) {
-                                Column {
-                                    presentes.forEachIndexed { index, jugador ->
-                                        JugadorAsistenciaRow(
-                                            jugador = jugador,
-                                            isChecked = true,
-                                            isEditable = state.isEditable,
-                                            onCheckedChange = { onEvent(AsistenciasEvent.OnJugadorToggled(jugador.jugadorId, it)) }
-                                        )
-                                        if (index < presentes.size - 1) HorizontalDivider(color = DividerColor)
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                    }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            item {
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Text("Pase de Lista", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+                    Spacer(modifier = Modifier.height(4.dp))
                     if (state.isEditable) {
-                        item {
-                            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Button(
-                                    onClick = {
-                                        onEvent(AsistenciasEvent.OnResetGuardado)
-                                        onNavigateBack()
-                                    },
-                                    modifier = Modifier.weight(1f).height(56.dp),
-                                    shape = RoundedCornerShape(24.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6B6B6B))
-                                ) { Text("Cancelar", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White) }
-                                Button(
-                                    onClick = { onEvent(AsistenciasEvent.OnConfirmarAsistencia) },
-                                    modifier = Modifier.weight(1f).height(56.dp),
-                                    shape = RoundedCornerShape(24.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
-                                ) { Text("Confirmar\nAsistencia", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White, textAlign = TextAlign.Center) }
+                        Text("Toca un jugador para marcar o quitar su asistencia de hoy.", fontSize = 13.sp, color = SuccessGreen, fontWeight = FontWeight.Medium)
+                    } else {
+                        Text("Modo lectura: Solo puedes ver la asistencia de este día.", fontSize = 13.sp, color = TextMuted)
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            if (state.isLoading) {
+                item { Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = HeaderOrange) } }
+            } else {
+                val presentes = state.jugadores.filter { state.asistencias[it.jugadorId] == true }
+                val ausentes = state.jugadores.filter { state.asistencias[it.jugadorId] != true }
+
+                if (ausentes.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Por Confirmar / Ausentes (${ausentes.size})",
+                            color = BadgeUrgentText, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, BorderColor)
+                        ) {
+                            Column {
+                                ausentes.forEachIndexed { index, jugador ->
+                                    JugadorAsistenciaRow(
+                                        jugador = jugador,
+                                        isChecked = false,
+                                        isEditable = state.isEditable,
+                                        onClick = { viewModel.onEvent(AsistenciasEvent.OnJugadorToggled(jugador.jugadorId)) }
+                                    )
+                                    if (index < ausentes.size - 1) HorizontalDivider(color = DividerColor)
+                                }
                             }
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+                if (presentes.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Presentes (${presentes.size})",
+                            color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            colors = CardDefaults.cardColors(containerColor = CardBackground),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, BorderColor)
+                        ) {
+                            Column {
+                                presentes.forEachIndexed { index, jugador ->
+                                    JugadorAsistenciaRow(
+                                        jugador = jugador,
+                                        isChecked = true,
+                                        isEditable = state.isEditable,
+                                        onClick = { viewModel.onEvent(AsistenciasEvent.OnSolicitarQuitarAsistencia(jugador)) }
+                                    )
+                                    if (index < presentes.size - 1) HorizontalDivider(color = DividerColor)
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+                if (state.jugadores.isEmpty()) {
+                    item {
+                        Text(
+                            "No hay jugadores activos en esta categoría.",
+                            color = TextMuted, textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(32.dp)
+                        )
                     }
                 }
             }
@@ -359,16 +337,14 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, onClick: (CalendarDay) -> Uni
         else -> TextDark
     }
     val bgColor = if (isSelected) HeaderOrange else Color.Transparent
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .padding(4.dp)
             .clip(CircleShape)
             .background(bgColor)
-            .clickable(
-                enabled = isCurrentMonth,
-                onClick = { onClick(day) }
-            ),
+            .clickable(enabled = isCurrentMonth, onClick = { onClick(day) }),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -385,21 +361,37 @@ private fun JugadorAsistenciaRow(
     jugador: Jugador,
     isChecked: Boolean,
     isEditable: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).clickable(enabled = isEditable) { onCheckedChange(!isChecked) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .clickable(enabled = isEditable) { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(40.dp).background(BorderColor, CircleShape),
+            modifier = Modifier.size(40.dp).clip(CircleShape).background(BorderColor),
             contentAlignment = Alignment.Center
-        ) { Text(jugador.nombre.take(1).uppercase(), fontWeight = FontWeight.Bold, color = TextDark, fontSize = 16.sp) }
+        ) {
+            if (!jugador.fotoUri.isNullOrEmpty()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context).data(jugador.fotoUri).crossfade(true).build(),
+                    contentDescription = "Foto de ${jugador.nombre}",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(jugador.nombre.take(1).uppercase(), fontWeight = FontWeight.Bold, color = TextDark, fontSize = 16.sp)
+            }
+        }
         Spacer(modifier = Modifier.width(16.dp))
         Text(jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextDark, modifier = Modifier.weight(1f))
+
         Checkbox(
             checked = isChecked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
             enabled = isEditable,
             colors = CheckboxDefaults.colors(checkedColor = SuccessGreen, checkmarkColor = Color.White)
         )
@@ -410,16 +402,10 @@ private fun JugadorAsistenciaRow(
 @Composable
 fun AsistenciasScreenPreview() {
     ProBasketAcademyTheme {
-        AsistenciasContent(
-            state = AsistenciasState(
-                jugadores = listOf(
-                    Jugador(nombre = "William Rodriguez", categoriaNombre = "U-20"),
-                    Jugador(nombre = "Juan Perez", categoriaNombre = "U-20")
-                )
-            ),
-            onEvent = {},
+        AsistenciasScreen(
             onNavigateBack = {},
-            onProfileClick = {}
+            onLogout = {},
+            viewModel = hiltViewModel()
         )
     }
 }
