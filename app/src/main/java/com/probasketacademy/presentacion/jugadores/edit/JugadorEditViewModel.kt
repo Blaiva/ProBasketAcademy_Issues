@@ -22,6 +22,9 @@ class JugadorEditViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(JugadorEditState())
     val uiState: StateFlow<JugadorEditState> = _uiState.asStateFlow()
 
+    private val _navigateBack = MutableSharedFlow<Unit>()
+    val navigateBack: SharedFlow<Unit> = _navigateBack.asSharedFlow()
+
     init {
         cargarCategorias()
     }
@@ -29,7 +32,6 @@ class JugadorEditViewModel @Inject constructor(
     fun onEvent(event: JugadorEditEvent) {
         when (event) {
             is JugadorEditEvent.OnNombreChanged -> _uiState.update { it.copy(nombre = event.value, nombreError = null) }
-            is JugadorEditEvent.OnTelefonoChanged -> _uiState.update { it.copy(telefono = event.value, telefonoError = null) }
             is JugadorEditEvent.OnEdadChanged -> _uiState.update { it.copy(edad = event.value, edadError = null) }
             is JugadorEditEvent.OnDomicilioChanged -> _uiState.update { it.copy(domicilio = event.value, domicilioError = null) }
             is JugadorEditEvent.OnCategoriaSelected -> _uiState.update { it.copy(categoriaId = event.id, categoriaNombre = event.nombre) }
@@ -38,7 +40,6 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnEstaturaChanged -> _uiState.update { it.copy(estatura = event.value, estaturaError = null) }
             is JugadorEditEvent.OnPesoChanged -> _uiState.update { it.copy(peso = event.value, pesoError = null) }
             is JugadorEditEvent.OnTutorNombreChanged -> _uiState.update { it.copy(tutorNombre = event.value, tutorNombreError = null) }
-            is JugadorEditEvent.OnTutorTelefonoChanged -> _uiState.update { it.copy(tutorTelefono = event.value, tutorTelefonoError = null) }
             is JugadorEditEvent.OnTutorVinculoChanged -> _uiState.update { it.copy(tutorVinculo = event.value, tutorVinculoError = null) }
             is JugadorEditEvent.OnTutorCorreoChanged -> _uiState.update { it.copy(tutorCorreo = event.value, tutorCorreoError = null) }
             is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value) }
@@ -49,13 +50,19 @@ class JugadorEditViewModel @Inject constructor(
                     docCompleta = !event.uri.isNullOrEmpty()
                 )
             }
+            is JugadorEditEvent.OnTelefonoChanged -> _uiState.update {
+                it.copy(telefono = event.value.filter { c -> c.isDigit() }, telefonoError = null)
+            }
+            is JugadorEditEvent.OnTutorTelefonoChanged -> _uiState.update {
+                it.copy(tutorTelefono = event.value.filter { c -> c.isDigit() }, tutorTelefonoError = null)
+            }
 
             is JugadorEditEvent.OnGuardarClicked -> onGuardar()
             is JugadorEditEvent.OnEliminarClicked -> onEliminar()
         }
     }
 
-    private fun cargarCategorias() {
+    fun cargarCategorias() {
         viewModelScope.launch {
             obtenerCategoriasConConteoUseCase().collectLatest { lista ->
                 _uiState.update { it.copy(categorias = lista) }
@@ -189,6 +196,7 @@ class JugadorEditViewModel @Inject constructor(
             val result = guardarJugadorUseCase(jugador)
             result.onSuccess {
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
+                _navigateBack.emit(Unit)
             }.onFailure { e ->
                 _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
             }
@@ -203,6 +211,7 @@ class JugadorEditViewModel @Inject constructor(
             _uiState.update { it.copy(isDeleting = true) }
             eliminarJugadorUseCase(id)
             _uiState.update { it.copy(isDeleting = false, isDeleted = true) }
+            _navigateBack.emit(Unit)
         }
     }
 }

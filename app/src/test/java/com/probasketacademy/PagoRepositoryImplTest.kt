@@ -6,6 +6,7 @@ import com.probasketacademy.data.local.pago.PagoConJugadorDto
 import com.probasketacademy.data.local.pago.PagoDao
 import com.probasketacademy.data.local.pago.PagoEntity
 import com.probasketacademy.data.repository.PagoRepositoryImpl
+import com.probasketacademy.data.repository.UserSessionProvider
 import com.probasketacademy.domain.model.Pago
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -25,21 +26,19 @@ import org.junit.Test
 class PagoRepositoryImplTest {
 
     private lateinit var dao: PagoDao
-    private lateinit var auth: FirebaseAuth
-    private lateinit var user: FirebaseUser
     private lateinit var repository: PagoRepositoryImpl
 
-    private val userId = "user-999"
+    private lateinit var userSession: UserSessionProvider
+    private val userId = "user-123"
 
     @Before
     fun setUp() {
         dao = mockk(relaxed = true)
-        auth = mockk()
-        user = mockk()
-        every { user.uid } returns userId
-        every { auth.currentUser } returns user
+        userSession = mockk()
+        every { userSession.currentUserId } returns userId
+        every { userSession.observeUserId() } returns flowOf(userId)
 
-        repository = PagoRepositoryImpl(dao, auth)
+        repository = PagoRepositoryImpl(dao, userSession)
     }
 
     @Test

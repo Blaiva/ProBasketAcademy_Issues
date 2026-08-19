@@ -6,6 +6,7 @@ import com.probasketacademy.data.local.asistencia.AsistenciaDao
 import com.probasketacademy.data.local.asistencia.AsistenciaEntity
 import com.probasketacademy.data.local.asistencia.AsistenciaJugadorDto
 import com.probasketacademy.data.repository.AsistenciaRepositoryImpl
+import com.probasketacademy.data.repository.UserSessionProvider
 import com.probasketacademy.domain.model.Asistencia
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -25,21 +26,18 @@ import org.junit.Test
 class AsistenciaRepositoryImplTest {
 
     private lateinit var dao: AsistenciaDao
-    private lateinit var auth: FirebaseAuth
-    private lateinit var user: FirebaseUser
     private lateinit var repository: AsistenciaRepositoryImpl
-
-    private val userId = "user-xyz"
+    private lateinit var userSession: UserSessionProvider
+    private val userId = "user-123"
 
     @Before
     fun setUp() {
         dao = mockk(relaxed = true)
-        auth = mockk()
-        user = mockk()
-        every { user.uid } returns userId
-        every { auth.currentUser } returns user
+        userSession = mockk()
+        every { userSession.currentUserId } returns userId
+        every { userSession.observeUserId() } returns flowOf(userId)
 
-        repository = AsistenciaRepositoryImpl(dao, auth)
+        repository = AsistenciaRepositoryImpl(dao, userSession)
     }
 
     @Test

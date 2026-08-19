@@ -1,4 +1,4 @@
-package com.probasketacademy.presentacion.finanzas.detalle
+package com.probasketacademy.presentacion.pagos.detalle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -45,16 +45,27 @@ class PagosDetalleViewModel @Inject constructor(
                 _uiState.update { it.copy(showPagoDialog = !it.showPagoDialog) }
             }
             is PagosDetalleEvent.OnToggleAbonoDialog -> {
-                _uiState.update { it.copy(
-                    showAbonoDialog = !it.showAbonoDialog,
-                    selectedPagoParaAbono = event.pago,
-                    montoNuevoAbonoInput = ""
-                ) }
+                _uiState.update {
+                    it.copy(
+                        showAbonoDialog = !it.showAbonoDialog,
+                        selectedPagoParaAbono = event.pago,
+                        montoNuevoAbonoInput = "",
+                        montoNuevoAbonoError = null
+                    )
+                }
             }
             is PagosDetalleEvent.OnConceptoChanged -> _uiState.update { it.copy(conceptoInput = event.concepto) }
             is PagosDetalleEvent.OnMontoTotalChanged -> _uiState.update { it.copy(montoTotalInput = event.monto) }
             is PagosDetalleEvent.OnMontoAbonadoChanged -> _uiState.update { it.copy(montoAbonadoInput = event.monto) }
-            is PagosDetalleEvent.OnMontoNuevoAbonoChanged -> _uiState.update { it.copy(montoNuevoAbonoInput = event.monto) }
+            is PagosDetalleEvent.OnMontoNuevoAbonoChanged -> {
+                // Solo dígitos: no se permiten decimales en el abono
+                _uiState.update {
+                    it.copy(
+                        montoNuevoAbonoInput = event.monto.filter { c -> c.isDigit() },
+                        montoNuevoAbonoError = null
+                    )
+                }
+            }
             is PagosDetalleEvent.OnTipoInscripcionChanged -> {
                 _uiState.update { it.copy(tipoInscripcion = event.value) }
                 calcularVencimiento()
@@ -153,13 +164,30 @@ class PagosDetalleViewModel @Inject constructor(
         val state = _uiState.value
         val pago = state.selectedPagoParaAbono ?: return
         val jugador = state.jugador ?: return
-        val montoAbono = state.montoNuevoAbonoInput.toDoubleOrNull() ?: 0.0
+        val montoAbono = state.montoNuevoAbonoInput.toDoubleOrNull()
+
+        if (montoAbono == null || montoAbono <= 0.0) {
+            _uiState.update { it.copy(montoNuevoAbonoError = "Ingresa un monto válido") }
+            return
+        }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, showAbonoDialog = false) }
             registrarAbonoUseCase(pago, jugador, montoAbono)
-                .onSuccess { _uiState.update { it.copy(isLoading = false) } }
-                .onFailure { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
+                .onSuccess {
+                    // El diálogo solo se cierra cuando el dato es correcto
+                    _uiState.update {
+                        it.copy(
+                            showAbonoDialog = false,
+                            selectedPagoParaAbono = null,
+                            montoNuevoAbonoInput = "",
+                            montoNuevoAbonoError = null
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    // El diálogo permanece abierto mostrando el error
+                    _uiState.update { it.copy(montoNuevoAbonoError = e.message) }
+                }
         }
     }
 

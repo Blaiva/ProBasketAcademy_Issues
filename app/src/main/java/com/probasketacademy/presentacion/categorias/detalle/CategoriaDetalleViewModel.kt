@@ -55,25 +55,32 @@ class CategoriaDetalleViewModel @Inject constructor(
             }
             is CategoriaDetalleEvent.OnShowAddJugadoresDialogChanged -> {
                 _uiState.update {
-                    it.copy(
-                        showAddJugadoresDialog = event.show,
-                        selectedJugadoresIds = emptySet()
-                    )
+                    it.copy(showAddJugadoresDialog = event.show, selectedJugadoresIds = emptySet())
                 }
             }
             is CategoriaDetalleEvent.OnJugadorSelectionToggled -> {
                 _uiState.update { state ->
                     val currentSet = state.selectedJugadoresIds.toMutableSet()
-                    if (currentSet.contains(event.jugadorId)) {
-                        currentSet.remove(event.jugadorId)
-                    } else {
-                        currentSet.add(event.jugadorId)
-                    }
+                    if (currentSet.contains(event.jugadorId)) currentSet.remove(event.jugadorId) else currentSet.add(event.jugadorId)
                     state.copy(selectedJugadoresIds = currentSet)
                 }
             }
             is CategoriaDetalleEvent.OnAsignarJugadoresSeleccionados -> asignarJugadoresSeleccionados()
-            is CategoriaDetalleEvent.OnRemoverJugador -> removerJugador(event.jugador)
+            is CategoriaDetalleEvent.OnSolicitarRemoverJugador -> {
+                _uiState.update { it.copy(showRemoveConfirmDialog = true, jugadorParaRemover = event.jugador) }
+            }
+            is CategoriaDetalleEvent.OnCancelarRemoverJugador -> {
+                _uiState.update { it.copy(showRemoveConfirmDialog = false, jugadorParaRemover = null) }
+            }
+            is CategoriaDetalleEvent.OnConfirmarRemoverJugador -> removerJugador()
+        }
+    }
+
+    private fun removerJugador() {
+        val jugador = uiState.value.jugadorParaRemover ?: return
+        viewModelScope.launch {
+            removerJugadorDeCategoriaUseCase(jugador)
+            _uiState.update { it.copy(showRemoveConfirmDialog = false, jugadorParaRemover = null) }
         }
     }
 
@@ -170,12 +177,6 @@ class CategoriaDetalleViewModel @Inject constructor(
                     selectedJugadoresIds = emptySet()
                 )
             }
-        }
-    }
-
-    private fun removerJugador(jugador: Jugador) {
-        viewModelScope.launch {
-            removerJugadorDeCategoriaUseCase(jugador)
         }
     }
 }

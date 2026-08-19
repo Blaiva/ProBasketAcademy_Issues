@@ -6,6 +6,7 @@ import com.probasketacademy.data.local.categoria.CategoriaConConteoDto
 import com.probasketacademy.data.local.categoria.CategoriaDao
 import com.probasketacademy.data.local.categoria.CategoriaEntity
 import com.probasketacademy.data.repository.CategoriaRepositoryImpl
+import com.probasketacademy.data.repository.UserSessionProvider
 import com.probasketacademy.domain.model.Categoria
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -26,21 +27,19 @@ import org.junit.Test
 class CategoriaRepositoryImplTest {
 
     private lateinit var dao: CategoriaDao
-    private lateinit var auth: FirebaseAuth
-    private lateinit var user: FirebaseUser
     private lateinit var repository: CategoriaRepositoryImpl
 
-    private val userId = "user-abc"
+    private lateinit var userSession: UserSessionProvider
+    private val userId = "user-123"
 
     @Before
     fun setUp() {
         dao = mockk(relaxed = true)
-        auth = mockk()
-        user = mockk()
-        every { user.uid } returns userId
-        every { auth.currentUser } returns user
+        userSession = mockk()
+        every { userSession.currentUserId } returns userId
+        every { userSession.observeUserId() } returns flowOf(userId)
 
-        repository = CategoriaRepositoryImpl(dao, auth)
+        repository = CategoriaRepositoryImpl(dao, userSession)
     }
 
     @Test

@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -25,9 +27,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.domain.model.Pago
-import com.probasketacademy.presentacion.finanzas.detalle.PagosDetalleViewModel
 import com.probasketacademy.ui.theme.*
 
 @Composable
@@ -45,13 +49,15 @@ fun PagosDetalleScreen(
     PagosDetalleContent(
         state = state,
         onEvent = viewModel::onEvent,
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        viewModel = viewModel
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PagosDetalleContent(
+    viewModel: PagosDetalleViewModel,
     state: PagosDetalleState,
     onEvent: (PagosDetalleEvent) -> Unit,
     onNavigateBack: () -> Unit
@@ -150,7 +156,7 @@ fun PagosDetalleContent(
 
     if (state.showAbonoDialog) {
         AlertDialog(
-            onDismissRequest = { onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) },
+            onDismissRequest = { viewModel.onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) },
             title = { Text("Registrar Abono al Capital", fontWeight = FontWeight.Bold, color = TextDark) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -158,10 +164,12 @@ fun PagosDetalleContent(
 
                     OutlinedTextField(
                         value = state.montoNuevoAbonoInput,
-                        onValueChange = { onEvent(PagosDetalleEvent.OnMontoNuevoAbonoChanged(it)) },
+                        onValueChange = { viewModel.onEvent(PagosDetalleEvent.OnMontoNuevoAbonoChanged(it)) },
                         label = { Text("Monto del Abono") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
+                        isError = state.montoNuevoAbonoError != null,
+                        supportingText = state.montoNuevoAbonoError?.let { { Text(it) } },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -169,12 +177,12 @@ fun PagosDetalleContent(
             },
             confirmButton = {
                 Button(
-                    onClick = { onEvent(PagosDetalleEvent.OnRegistrarAbono) },
+                    onClick = { viewModel.onEvent(PagosDetalleEvent.OnRegistrarAbono) },
                     colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
                 ) { Text("Confirmar Abono", color = Color.White, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) }) { Text("Cancelar", color = TextMuted) }
+                TextButton(onClick = { viewModel.onEvent(PagosDetalleEvent.OnToggleAbonoDialog()) }) { Text("Cancelar", color = TextMuted) }
             },
             containerColor = CardBackground
         )
@@ -237,13 +245,27 @@ fun PagosDetalleContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                modifier = Modifier.size(56.dp).background(LightBackground, CircleShape),
+                                modifier = Modifier.size(56.dp).clip(CircleShape).background(LightBackground),
                                 contentAlignment = Alignment.Center
-                            ) { Text(if (jugador.nombre.isNotEmpty()) jugador.nombre.take(1).uppercase() else "?", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = TextDark) }
+                            ) {
+                                if (!jugador.fotoUri.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(LocalContext.current)
+                                            .data(jugador.fotoUri)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "Foto de ${jugador.nombre}",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Text(if (jugador.nombre.isNotEmpty()) jugador.nombre.take(1).uppercase() else "?", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = TextDark)
+                                }
+                            }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(jugador.nombre.uppercase(), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = TextDark)
-                                Text("#${jugador.numeroCamiseta}, ${jugador.categoriaNombre.ifEmpty { "Sin Categoría" }}", fontSize = 13.sp, color = TextMuted)
+                                Text("#${jugador.numeroCamiseta}, ${jugador.categoriaNombre?.ifEmpty { "Sin Categoría" } ?: "Sin Categoría"}", fontSize = 13.sp, color = TextMuted)
                             }
                         }
                     }
@@ -448,7 +470,8 @@ fun PagosDetalleScreenPreview() {
                 )
             ),
             onEvent = {},
-            onNavigateBack = {}
+            onNavigateBack = {},
+            viewModel = hiltViewModel()
         )
     }
 }

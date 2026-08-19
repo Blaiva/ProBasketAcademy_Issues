@@ -8,4 +8,5 @@ interface AsistenciaRepository {
     suspend fun registrarAsistencias(asistencias: List<Asistencia>): List<Long>
     fun obtenerAsistenciasPorDia(fechaTimestamp: Long): Flow<List<Asistencia>>
     fun obtenerAsistenciaPromedioPorMes(inicio: Long, fin: Long): Flow<Double?>
+    suspend fun obtenerAsistenciaExistente(jugadorId: Long, fechaTimestamp: Long): Asistencia?
 }

@@ -6,6 +6,7 @@ import com.probasketacademy.data.local.jugador.JugadorConCategoriaDto
 import com.probasketacademy.data.local.jugador.JugadorDao
 import com.probasketacademy.data.local.jugador.JugadorEntity
 import com.probasketacademy.data.repository.JugadorRepositoryImpl
+import com.probasketacademy.data.repository.UserSessionProvider
 import com.probasketacademy.domain.model.Jugador
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -26,21 +27,19 @@ import org.junit.Test
 class JugadorRepositoryImplTest {
 
     private lateinit var dao: JugadorDao
-    private lateinit var auth: FirebaseAuth
-    private lateinit var user: FirebaseUser
     private lateinit var repository: JugadorRepositoryImpl
 
+    private lateinit var userSession: UserSessionProvider
     private val userId = "user-123"
 
     @Before
     fun setUp() {
         dao = mockk(relaxed = true)
-        auth = mockk()
-        user = mockk()
-        every { user.uid } returns userId
-        every { auth.currentUser } returns user
+        userSession = mockk()
+        every { userSession.currentUserId } returns userId
+        every { userSession.observeUserId() } returns flowOf(userId)
 
-        repository = JugadorRepositoryImpl(dao, auth)
+        repository = JugadorRepositoryImpl(dao, userSession)
     }
 
     @Test

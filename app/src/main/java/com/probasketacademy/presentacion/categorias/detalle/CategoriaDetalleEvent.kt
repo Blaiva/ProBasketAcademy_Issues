@@ -13,5 +13,7 @@ sealed interface CategoriaDetalleEvent {
     data class OnShowAddJugadoresDialogChanged(val show: Boolean) : CategoriaDetalleEvent
     data class OnJugadorSelectionToggled(val jugadorId: Long) : CategoriaDetalleEvent
     object OnAsignarJugadoresSeleccionados : CategoriaDetalleEvent
-    data class OnRemoverJugador(val jugador: Jugador) : CategoriaDetalleEvent
+    data class OnSolicitarRemoverJugador(val jugador: Jugador) : CategoriaDetalleEvent
+    object OnCancelarRemoverJugador : CategoriaDetalleEvent
+    object OnConfirmarRemoverJugador : CategoriaDetalleEvent
 }

@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.probasketacademy.data.local.evento.EventoDao
 import com.probasketacademy.data.local.evento.EventoEntity
 import com.probasketacademy.data.repository.EventoRepositoryImpl
+import com.probasketacademy.data.repository.UserSessionProvider
 import com.probasketacademy.domain.model.Evento
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -25,21 +26,19 @@ import org.junit.Test
 class EventoRepositoryImplTest {
 
     private lateinit var dao: EventoDao
-    private lateinit var auth: FirebaseAuth
-    private lateinit var user: FirebaseUser
     private lateinit var repository: EventoRepositoryImpl
 
-    private val userId = "user-555"
+    private lateinit var userSession: UserSessionProvider
+    private val userId = "user-123"
 
     @Before
     fun setUp() {
         dao = mockk(relaxed = true)
-        auth = mockk()
-        user = mockk()
-        every { user.uid } returns userId
-        every { auth.currentUser } returns user
+        userSession = mockk()
+        every { userSession.currentUserId } returns userId
+        every { userSession.observeUserId() } returns flowOf(userId)
 
-        repository = EventoRepositoryImpl(dao, auth)
+        repository = EventoRepositoryImpl(dao, userSession)
     }
 
     @Test
