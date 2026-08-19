@@ -163,7 +163,9 @@ fun PagosDetalleContent(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        isError = state.errorMessage != null,
+                        supportingText = state.errorMessage?.let { {Text(it)} }
                     )
                 }
             },

@@ -18,8 +18,11 @@ class RegistrarAbonoUseCase @Inject constructor(
         if (montoAbono <= 0.0) {
             return Result.failure(IllegalArgumentException("El monto del abono debe ser mayor a 0"))
         }
+
         if (montoAbono > pago.deuda) {
-            return Result.failure(IllegalArgumentException("El abono no puede ser mayor a la deuda pendiente"))
+            return Result.failure(
+                IllegalArgumentException("El abono no puede ser mayor a la deuda pendiente ($${pago.deuda})")
+            )
         }
 
         val nuevoMontoPagado = pago.montoPagado + montoAbono
