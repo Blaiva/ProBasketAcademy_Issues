@@ -22,6 +22,9 @@ class JugadorEditViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(JugadorEditState())
     val uiState: StateFlow<JugadorEditState> = _uiState.asStateFlow()
 
+    private val _navigateBack = MutableSharedFlow<Unit>()
+    val navigateBack: SharedFlow<Unit> = _navigateBack.asSharedFlow()
+
     init {
         cargarCategorias()
     }
@@ -189,6 +192,7 @@ class JugadorEditViewModel @Inject constructor(
             val result = guardarJugadorUseCase(jugador)
             result.onSuccess {
                 _uiState.update { it.copy(isSaving = false, isSaved = true) }
+                _navigateBack.emit(Unit)
             }.onFailure { e ->
                 _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
             }
@@ -203,6 +207,7 @@ class JugadorEditViewModel @Inject constructor(
             _uiState.update { it.copy(isDeleting = true) }
             eliminarJugadorUseCase(id)
             _uiState.update { it.copy(isDeleting = false, isDeleted = true) }
+            _navigateBack.emit(Unit)
         }
     }
 }
