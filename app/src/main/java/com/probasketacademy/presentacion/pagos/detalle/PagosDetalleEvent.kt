@@ -9,11 +9,8 @@ sealed interface PagosDetalleEvent {
     data class OnMontoTotalChanged(val monto: String) : PagosDetalleEvent
     data class OnMontoAbonadoChanged(val monto: String) : PagosDetalleEvent
     data class OnMontoNuevoAbonoChanged(val monto: String) : PagosDetalleEvent
-    
-    // Nuevos eventos para inscripción
     data class OnTipoInscripcionChanged(val value: String) : PagosDetalleEvent
     data class OnFechaInicioChanged(val value: String) : PagosDetalleEvent
-
     data object OnRegistrarPago : PagosDetalleEvent
     data object OnRegistrarAbono : PagosDetalleEvent
     data class OnToggleSaldarConfirmDialog(val pago: Pago? = null) : PagosDetalleEvent

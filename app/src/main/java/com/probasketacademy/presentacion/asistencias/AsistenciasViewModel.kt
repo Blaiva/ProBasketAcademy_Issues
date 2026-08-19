@@ -71,9 +71,6 @@ class AsistenciasViewModel @Inject constructor(
         }
     }
 
-    // Se mantiene la suscripción activa al Flow de Room: cada escritura en "asistencias"
-    // invalida y re-emite automáticamente esta consulta, así que la UI siempre refleja
-    // el estado real de la base de datos, sin listas locales que puedan desincronizarse.
     private fun cargarDatosPorFecha(date: LocalDate) {
         val categoriaId = _uiState.value.categoriaSeleccionadaId ?: return
         job?.cancel()

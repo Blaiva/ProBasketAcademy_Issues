@@ -31,7 +31,6 @@ data class JugadorEditState(
     val categoriaNombre: String = "",
     val categorias: List<Categoria> = emptyList(),
 
-    // --- CAMPOS FINANCIEROS OCULTOS ---
     val tipoInscripcion: String = "Mensual",
     val fechaInicio: String = "",
     val fechaVencimiento: String = "",

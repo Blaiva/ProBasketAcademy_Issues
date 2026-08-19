@@ -58,7 +58,6 @@ class PagosDetalleViewModel @Inject constructor(
             is PagosDetalleEvent.OnMontoTotalChanged -> _uiState.update { it.copy(montoTotalInput = event.monto) }
             is PagosDetalleEvent.OnMontoAbonadoChanged -> _uiState.update { it.copy(montoAbonadoInput = event.monto) }
             is PagosDetalleEvent.OnMontoNuevoAbonoChanged -> {
-                // Solo dígitos: no se permiten decimales en el abono
                 _uiState.update {
                     it.copy(
                         montoNuevoAbonoInput = event.monto.filter { c -> c.isDigit() },
@@ -174,7 +173,6 @@ class PagosDetalleViewModel @Inject constructor(
         viewModelScope.launch {
             registrarAbonoUseCase(pago, jugador, montoAbono)
                 .onSuccess {
-                    // El diálogo solo se cierra cuando el dato es correcto
                     _uiState.update {
                         it.copy(
                             showAbonoDialog = false,
@@ -185,7 +183,6 @@ class PagosDetalleViewModel @Inject constructor(
                     }
                 }
                 .onFailure { e ->
-                    // El diálogo permanece abierto mostrando el error
                     _uiState.update { it.copy(montoNuevoAbonoError = e.message) }
                 }
         }
