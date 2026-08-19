@@ -17,5 +17,7 @@ data class CategoriaDetalleState(
     val selectedJugadoresIds: Set<Long> = emptySet(),
     val showAddJugadoresDialog: Boolean = false,
     val isAssigning: Boolean = false,
+    val showRemoveConfirmDialog: Boolean = false,
+    val jugadorParaRemover: Jugador? = null,
     val errorMessage: String? = null
 )
