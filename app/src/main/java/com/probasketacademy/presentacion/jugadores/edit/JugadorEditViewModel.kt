@@ -55,7 +55,7 @@ class JugadorEditViewModel @Inject constructor(
         }
     }
 
-    private fun cargarCategorias() {
+    fun cargarCategorias() {
         viewModelScope.launch {
             obtenerCategoriasConConteoUseCase().collectLatest { lista ->
                 _uiState.update { it.copy(categorias = lista) }

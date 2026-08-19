@@ -57,6 +57,10 @@ fun JugadorEditScreen(
         viewModel.cargarJugador(jugadorId)
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.cargarCategorias()
+    }
+
     LaunchedEffect(state.isSaved, state.isDeleted) {
         if (state.isSaved || state.isDeleted) {
             onNavigateBack()
