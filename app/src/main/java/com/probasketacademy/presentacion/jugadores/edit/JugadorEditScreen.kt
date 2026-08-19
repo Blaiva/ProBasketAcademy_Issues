@@ -745,9 +745,10 @@ fun JugadorEditContent(
                                         contentDescription = "Acta de nacimiento",
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(200.dp)
-                                            .clip(RoundedCornerShape(12.dp)),
-                                        contentScale = ContentScale.Crop
+                                            .heightIn(min = 150.dp, max = 320.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(LightBackground),
+                                        contentScale = ContentScale.Fit
                                     )
                                 } else {
                                     Box(
