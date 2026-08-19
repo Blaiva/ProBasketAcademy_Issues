@@ -95,9 +95,9 @@ fun EventosContent(
 
     if (state.showAddDialog) {
         var titulo by remember { mutableStateOf("") }
-        var tipo by remember { mutableStateOf("Entrenamiento") }
-        var horaStr by remember { mutableStateOf("16:00") }
-        var duracionStr by remember { mutableStateOf("1.5") }
+        var tipo by remember { mutableStateOf("") }
+        var horaStr by remember { mutableStateOf("") }
+        var duracionStr by remember { mutableStateOf("") }
         var lugar by remember { mutableStateOf("") }
 
         AlertDialog(
