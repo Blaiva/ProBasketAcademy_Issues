@@ -16,12 +16,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.ui.theme.*
 
@@ -60,16 +66,37 @@ fun CategoriaDetalleScreen(
         )
     }
 
+    if (state.showRemoveConfirmDialog && state.jugadorParaRemover != null) {
+        val jugador = state.jugadorParaRemover!!
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(CategoriaDetalleEvent.OnCancelarRemoverJugador) },
+            title = { Text("Remover Jugador", fontWeight = FontWeight.Bold, color = TextDark) },
+            text = { Text("¿Deseas remover a ${jugador.nombre} de esta categoría?", color = TextDark) },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnConfirmarRemoverJugador) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) { Text("Remover", color = Color.White, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onEvent(CategoriaDetalleEvent.OnCancelarRemoverJugador) }) { Text("Cancelar", color = TextMuted) }
+            },
+            containerColor = CardBackground
+        )
+    }
+
     CategoriaDetalleContent(
         state = state,
         onEvent = viewModel::onEvent,
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        viewModel = viewModel
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriaDetalleContent(
+    viewModel: CategoriaDetalleViewModel,
     state: CategoriaDetalleState,
     onEvent: (CategoriaDetalleEvent) -> Unit,
     onNavigateBack: () -> Unit
@@ -295,7 +322,7 @@ fun CategoriaDetalleContent(
                     items(state.jugadoresAsignados) { jugador ->
                         JugadorDetalleRow(
                             jugador = jugador,
-                            onRemove = { onEvent(CategoriaDetalleEvent.OnRemoverJugador(jugador)) }
+                            onRemove = { viewModel.onEvent(CategoriaDetalleEvent.OnSolicitarRemoverJugador(jugador)) }
                         )
                     }
                 }
@@ -309,6 +336,9 @@ private fun JugadorDetalleRow(
     jugador: Jugador,
     onRemove: () -> Unit
 ) {
+    val context = LocalContext.current
+    val isActive = jugador.estado.equals("Activo", ignoreCase = true)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
@@ -316,26 +346,41 @@ private fun JugadorDetalleRow(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(IndicatorColor, CircleShape),
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(IndicatorColor),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = jugador.nombre.take(1).uppercase(),
-                    fontWeight = FontWeight.ExtraBold,
-                    color = HeaderOrange
-                )
+                if (!jugador.fotoUri.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context).data(jugador.fotoUri).crossfade(true).build(),
+                        contentDescription = "Foto de ${jugador.nombre}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(text = jugador.nombre.take(1).uppercase(), fontWeight = FontWeight.ExtraBold, color = HeaderOrange)
+                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextDark)
+                Spacer(modifier = Modifier.height(2.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isActive) ChipActiveBg else ChipInactiveBg)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = jugador.estado,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isActive) ChipActiveText else ChipInactiveText
+                    )
+                }
             }
             IconButton(onClick = onRemove) {
                 Icon(Icons.Default.Delete, contentDescription = "Remover", tint = Color.Red)
@@ -357,7 +402,8 @@ fun CategoriaDetalleScreenPreview() {
                 )
             ),
             onEvent = {},
-            onNavigateBack = {}
+            onNavigateBack = {},
+            viewModel = hiltViewModel()
         )
     }
 }
