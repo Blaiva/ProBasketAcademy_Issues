@@ -32,7 +32,6 @@ class JugadorEditViewModel @Inject constructor(
     fun onEvent(event: JugadorEditEvent) {
         when (event) {
             is JugadorEditEvent.OnNombreChanged -> _uiState.update { it.copy(nombre = event.value, nombreError = null) }
-            is JugadorEditEvent.OnTelefonoChanged -> _uiState.update { it.copy(telefono = event.value, telefonoError = null) }
             is JugadorEditEvent.OnEdadChanged -> _uiState.update { it.copy(edad = event.value, edadError = null) }
             is JugadorEditEvent.OnDomicilioChanged -> _uiState.update { it.copy(domicilio = event.value, domicilioError = null) }
             is JugadorEditEvent.OnCategoriaSelected -> _uiState.update { it.copy(categoriaId = event.id, categoriaNombre = event.nombre) }
@@ -41,7 +40,6 @@ class JugadorEditViewModel @Inject constructor(
             is JugadorEditEvent.OnEstaturaChanged -> _uiState.update { it.copy(estatura = event.value, estaturaError = null) }
             is JugadorEditEvent.OnPesoChanged -> _uiState.update { it.copy(peso = event.value, pesoError = null) }
             is JugadorEditEvent.OnTutorNombreChanged -> _uiState.update { it.copy(tutorNombre = event.value, tutorNombreError = null) }
-            is JugadorEditEvent.OnTutorTelefonoChanged -> _uiState.update { it.copy(tutorTelefono = event.value, tutorTelefonoError = null) }
             is JugadorEditEvent.OnTutorVinculoChanged -> _uiState.update { it.copy(tutorVinculo = event.value, tutorVinculoError = null) }
             is JugadorEditEvent.OnTutorCorreoChanged -> _uiState.update { it.copy(tutorCorreo = event.value, tutorCorreoError = null) }
             is JugadorEditEvent.OnEstadoChanged -> _uiState.update { it.copy(estado = event.value) }
@@ -51,6 +49,12 @@ class JugadorEditViewModel @Inject constructor(
                     actaNacimientoUri = event.uri,
                     docCompleta = !event.uri.isNullOrEmpty()
                 )
+            }
+            is JugadorEditEvent.OnTelefonoChanged -> _uiState.update {
+                it.copy(telefono = event.value.filter { c -> c.isDigit() }, telefonoError = null)
+            }
+            is JugadorEditEvent.OnTutorTelefonoChanged -> _uiState.update {
+                it.copy(tutorTelefono = event.value.filter { c -> c.isDigit() }, tutorTelefonoError = null)
             }
 
             is JugadorEditEvent.OnGuardarClicked -> onGuardar()
