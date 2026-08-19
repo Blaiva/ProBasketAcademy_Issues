@@ -18,12 +18,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.probasketacademy.R
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.presentacion.perfil.ProfileDialog
@@ -175,13 +180,28 @@ fun PagosListContent(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(
-                                        modifier = Modifier.size(48.dp).background(BorderColor, CircleShape),
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(CircleShape)
+                                            .background(BorderColor),
                                         contentAlignment = Alignment.Center
-                                    ) { Text(if (jugador.nombre.isNotEmpty()) jugador.nombre.take(1).uppercase() else "?", fontWeight = FontWeight.Bold, color = TextDark, fontSize = 18.sp) }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(jugador.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
-                                        Text("${jugador.categoriaNombre}   #${jugador.numeroCamiseta}", fontSize = 12.sp, color = TextMuted)
+                                    ) {
+                                        if (!jugador.fotoUri.isNullOrEmpty()) {
+                                            AsyncImage(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(jugador.fotoUri)
+                                                    .crossfade(true)
+                                                    .build(),
+                                                contentDescription = "Foto de ${jugador.nombre}",
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
+                                            Text(
+                                                if (jugador.nombre.isNotEmpty()) jugador.nombre.take(1).uppercase() else "?",
+                                                fontWeight = FontWeight.Bold, color = TextDark, fontSize = 18.sp
+                                            )
+                                        }
                                     }
                                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = ChevronColor)
                                 }
