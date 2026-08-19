@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Asistencia
 import com.probasketacademy.domain.model.Jugador
+import com.probasketacademy.domain.usecase.asistencia.ActualizarAsistenciaJugadorUseCase
 import com.probasketacademy.domain.usecase.asistencia.ObtenerListaAsistenciaPorCategoriaUseCase
 import com.probasketacademy.domain.usecase.asistencia.RegistrarAsistenciasUseCase
 import com.probasketacademy.domain.usecase.categoria.ObtenerCategoriasConConteoUseCase
@@ -18,7 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AsistenciasViewModel @Inject constructor(
     private val obtenerListaAsistenciaPorCategoriaUseCase: ObtenerListaAsistenciaPorCategoriaUseCase,
-    private val registrarAsistenciasUseCase: RegistrarAsistenciasUseCase,
+    private val actualizarAsistenciaJugadorUseCase: ActualizarAsistenciaJugadorUseCase,
     private val obtenerCategoriasConConteoUseCase: ObtenerCategoriasConConteoUseCase
 ) : ViewModel() {
 
@@ -26,7 +27,6 @@ class AsistenciasViewModel @Inject constructor(
     val uiState: StateFlow<AsistenciasState> = _uiState.asStateFlow()
 
     private var job: Job? = null
-    private var asistenciasActuales: List<Asistencia> = emptyList()
 
     init {
         cargarCategorias()
@@ -34,22 +34,20 @@ class AsistenciasViewModel @Inject constructor(
 
     fun onEvent(event: AsistenciasEvent) {
         when (event) {
-            is AsistenciasEvent.OnJugadorToggled -> {
-                if (!_uiState.value.isEditable) return
-                val nuevasAsistencias = _uiState.value.asistencias.toMutableMap()
-                nuevasAsistencias[event.jugadorId] = event.asistio
-                _uiState.update { it.copy(asistencias = nuevasAsistencias) }
+            is AsistenciasEvent.OnJugadorToggled -> marcarPresente(event.jugadorId)
+            is AsistenciasEvent.OnSolicitarQuitarAsistencia -> {
+                _uiState.update { it.copy(showQuitarConfirmDialog = true, jugadorParaQuitar = event.jugador) }
             }
-            is AsistenciasEvent.OnConfirmarAsistencia -> guardarAsistencias()
+            is AsistenciasEvent.OnCancelarQuitarAsistencia -> {
+                _uiState.update { it.copy(showQuitarConfirmDialog = false, jugadorParaQuitar = null) }
+            }
+            is AsistenciasEvent.OnConfirmarQuitarAsistencia -> quitarAsistencia()
             is AsistenciasEvent.OnDateSelected -> {
                 _uiState.update { it.copy(selectedDate = event.date) }
                 cargarDatosPorFecha(event.date)
             }
             is AsistenciasEvent.OnVisibleMonthChanged -> {
                 _uiState.update { it.copy(currentYearMonth = event.yearMonth) }
-            }
-            is AsistenciasEvent.OnResetGuardado -> {
-                _uiState.update { it.copy(isSaved = false) }
             }
             is AsistenciasEvent.OnCategoriaSelected -> {
                 _uiState.update {
@@ -73,6 +71,9 @@ class AsistenciasViewModel @Inject constructor(
         }
     }
 
+    // Se mantiene la suscripción activa al Flow de Room: cada escritura en "asistencias"
+    // invalida y re-emite automáticamente esta consulta, así que la UI siempre refleja
+    // el estado real de la base de datos, sin listas locales que puedan desincronizarse.
     private fun cargarDatosPorFecha(date: LocalDate) {
         val categoriaId = _uiState.value.categoriaSeleccionadaId ?: return
         job?.cancel()
@@ -85,7 +86,6 @@ class AsistenciasViewModel @Inject constructor(
             obtenerListaAsistenciaPorCategoriaUseCase(categoriaId, fechaTimestamp)
                 .catch { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
                 .collect { lista ->
-                    asistenciasActuales = lista
                     val jugadoresDeLista = lista.map {
                         Jugador(
                             jugadorId = it.jugadorId,
@@ -102,29 +102,38 @@ class AsistenciasViewModel @Inject constructor(
         }
     }
 
-    private fun guardarAsistencias() {
+    private fun marcarPresente(jugadorId: Long) {
         if (!_uiState.value.isEditable) return
         val categoriaId = _uiState.value.categoriaSeleccionadaId ?: return
+        val jugador = _uiState.value.jugadores.find { it.jugadorId == jugadorId } ?: return
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            val state = _uiState.value
-            val fechaTimestamp = state.selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val fechaTimestamp = _uiState.value.selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            actualizarAsistenciaJugadorUseCase(
+                jugadorId = jugadorId,
+                categoriaId = categoriaId,
+                fechaTimestamp = fechaTimestamp,
+                asistio = true,
+                nombreJugador = jugador.nombre
+            )
+        }
+    }
 
-            val registros = state.jugadores.map { jugador ->
-                val existente = asistenciasActuales.find { it.jugadorId == jugador.jugadorId }
-                Asistencia(
-                    id = existente?.id ?: 0L,
-                    jugadorId = jugador.jugadorId,
-                    categoriaId = categoriaId,
-                    fechaEpocaMs = fechaTimestamp,
-                    asistio = state.asistencias[jugador.jugadorId] ?: false,
-                    nombreJugador = jugador.nombre
-                )
-            }
+    private fun quitarAsistencia() {
+        if (!_uiState.value.isEditable) return
+        val categoriaId = _uiState.value.categoriaSeleccionadaId ?: return
+        val jugador = _uiState.value.jugadorParaQuitar ?: return
 
-            registrarAsistenciasUseCase(registros)
-                .onSuccess { _uiState.update { it.copy(isLoading = false, isSaved = true) } }
-                .onFailure { e -> _uiState.update { it.copy(isLoading = false, errorMessage = e.message) } }
+        viewModelScope.launch {
+            val fechaTimestamp = _uiState.value.selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            actualizarAsistenciaJugadorUseCase(
+                jugadorId = jugador.jugadorId,
+                categoriaId = categoriaId,
+                fechaTimestamp = fechaTimestamp,
+                asistio = false,
+                nombreJugador = jugador.nombre
+            )
+            _uiState.update { it.copy(showQuitarConfirmDialog = false, jugadorParaQuitar = null) }
         }
     }
 }
