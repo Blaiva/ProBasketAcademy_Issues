@@ -11,20 +11,20 @@ data class PagosDetalleState(
     val showPagoDialog: Boolean = false,
     val showAbonoDialog: Boolean = false,
     val selectedPagoParaAbono: Pago? = null,
-    
-    // Inputs para Registrar Pago
+
     val conceptoInput: String = "",
     val montoTotalInput: String = "",
     val montoAbonadoInput: String = "",
-    
-    // Nuevos campos para inscripción/vencimiento
+
     val tipoInscripcion: String = "Mensual",
     val fechaInicio: String = "",
     val fechaVencimiento: String = "",
 
     val montoNuevoAbonoInput: String = "",
-    val errorMessage: String? = null,
+    val montoNuevoAbonoError: String? = null,
 
     val showSaldarConfirmDialog: Boolean = false,
     val pagoParaSaldar: Pago? = null,
+
+    val errorMessage: String? = null
 )
