@@ -25,4 +25,7 @@ interface AsistenciaDao {
 
     @Query("SELECT AVG(CAST(asistio AS INTEGER)) * 100 FROM asistencias WHERE fechaEpocaMs BETWEEN :inicio AND :fin AND userId = :userId")
     fun obtenerAsistenciaPromedioPorMes(inicio: Long, fin: Long, userId: String): Flow<Double?>
+
+    @Query("SELECT * FROM asistencias WHERE jugadorId = :jugadorId AND fechaEpocaMs = :fechaTimestamp AND userId = :userId LIMIT 1")
+    suspend fun obtenerAsistenciaPorJugadorYFecha(jugadorId: Long, fechaTimestamp: Long, userId: String): AsistenciaEntity?
 }

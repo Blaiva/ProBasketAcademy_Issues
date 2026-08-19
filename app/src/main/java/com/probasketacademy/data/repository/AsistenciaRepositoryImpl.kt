@@ -39,4 +39,8 @@ class AsistenciaRepositoryImpl @Inject constructor(
             asistenciaDao.obtenerAsistenciaPromedioPorMes(inicio, fin, userId)
         }
     }
+
+    override suspend fun obtenerAsistenciaExistente(jugadorId: Long, fechaTimestamp: Long): Asistencia? {
+        return asistenciaDao.obtenerAsistenciaPorJugadorYFecha(jugadorId, fechaTimestamp, userSession.currentUserId)?.toDomain()
+    }
 }
