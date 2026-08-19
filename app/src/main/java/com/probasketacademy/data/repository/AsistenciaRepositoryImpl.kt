@@ -7,30 +7,36 @@ import com.probasketacademy.data.mapper.toEntity
 import com.probasketacademy.domain.model.Asistencia
 import com.probasketacademy.domain.repository.AsistenciaRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class AsistenciaRepositoryImpl @Inject constructor(
     private val asistenciaDao: AsistenciaDao,
-    private val auth: FirebaseAuth
+    private val userSession: UserSessionProvider
 ): AsistenciaRepository {
-    private val userId: String get() = auth.currentUser?.uid ?: ""
 
     override fun obtenerListaAsistenciaPorCategoria(categoriaId: Long, fechaTimestamp: Long): Flow<List<Asistencia>> {
-        return asistenciaDao.obtenerListaAsistenciaPorCategoria(categoriaId, fechaTimestamp, userId)
-            .map { lista -> lista.map { it.toDomain(categoriaId, fechaTimestamp) } }
+        return userSession.observeUserId().flatMapLatest { userId ->
+            asistenciaDao.obtenerListaAsistenciaPorCategoria(categoriaId, fechaTimestamp, userId)
+                .map { lista -> lista.map { it.toDomain(categoriaId, fechaTimestamp) } }
+        }
     }
 
     override suspend fun registrarAsistencias(asistencias: List<Asistencia>): List<Long> {
-        asistenciaDao.registrarAsistencias(asistencias.map { it.toEntity(userId) })
+        asistenciaDao.registrarAsistencias(asistencias.map { it.toEntity(userSession.currentUserId) })
         return asistencias.map { it.id }
     }
 
     override fun obtenerAsistenciasPorDia(fechaTimestamp: Long): Flow<List<Asistencia>> {
-        return asistenciaDao.obtenerAsistenciasPorDia(fechaTimestamp, userId).map { lista -> lista.map { it.toDomain() } }
+        return userSession.observeUserId().flatMapLatest { userId ->
+            asistenciaDao.obtenerAsistenciasPorDia(fechaTimestamp, userId).map { lista -> lista.map { it.toDomain() } }
+        }
     }
 
     override fun obtenerAsistenciaPromedioPorMes(inicio: Long, fin: Long): Flow<Double?> {
-        return asistenciaDao.obtenerAsistenciaPromedioPorMes(inicio, fin, userId)
+        return userSession.observeUserId().flatMapLatest { userId ->
+            asistenciaDao.obtenerAsistenciaPromedioPorMes(inicio, fin, userId)
+        }
     }
 }
