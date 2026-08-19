@@ -1,3 +1,4 @@
+.
 Documentación Técnica y Funcional: ProBasket Academy App
 
 1. Introducción
