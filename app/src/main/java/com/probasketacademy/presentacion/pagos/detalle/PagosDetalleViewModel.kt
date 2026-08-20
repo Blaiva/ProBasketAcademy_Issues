@@ -142,7 +142,7 @@ class PagosDetalleViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, showPagoDialog = false) }
-            val sdfPago = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
+            val sdfPago = SimpleDateFormat("dd MMM yyyy", Locale.Builder().setLanguage("es").setRegion("ES").build())
             val fechaActual = sdfPago.format(Date())
 
             registrarPagoJugadorUseCase(
