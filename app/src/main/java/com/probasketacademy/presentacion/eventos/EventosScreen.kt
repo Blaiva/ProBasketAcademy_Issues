@@ -131,33 +131,34 @@ private fun ManejoDeDialogosEventos(state: EventosState, onEvent: (EventosEvent)
     }
 }
 
+private data class FormularioEventoData(
+    val titulo: String = "",
+    val tipo: String = "",
+    val horaStr: String = "",
+    val duracionStr: String = "",
+    val lugar: String = ""
+)
+
 @Composable
 private fun DialogoAgregarEvento(onEvent: (EventosEvent) -> Unit) {
-    var titulo by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf("") }
-    var horaStr by remember { mutableStateOf("") }
-    var duracionStr by remember { mutableStateOf("") }
-    var lugar by remember { mutableStateOf("") }
+    var formData by remember { mutableStateOf(FormularioEventoData()) }
 
     AlertDialog(
         onDismissRequest = { onEvent(EventosEvent.OnToggleAddDialog) },
         title = { Text("Nuevo Evento", fontWeight = FontWeight.Bold, color = TextDark) },
         text = {
             FormularioEvento(
-                titulo = titulo, onTituloChange = { titulo = it },
-                tipo = tipo, onTipoChange = { tipo = it },
-                horaStr = horaStr, onHoraChange = { horaStr = it },
-                duracionStr = duracionStr, onDuracionChange = { duracionStr = it },
-                lugar = lugar, onLugarChange = { lugar = it }
+                data = formData,
+                onDataChange = { formData = it }
             )
         },
         confirmButton = {
             Button(
                 onClick = {
                     try {
-                        val time = LocalTime.parse(horaStr)
-                        val dur = duracionStr.toFloatOrNull() ?: 1f
-                        onEvent(EventosEvent.OnGuardarEvento(titulo, tipo, time, dur, lugar))
+                        val time = LocalTime.parse(formData.horaStr)
+                        val dur = formData.duracionStr.toFloatOrNull() ?: 1f
+                        onEvent(EventosEvent.OnGuardarEvento(formData.titulo, formData.tipo, time, dur, formData.lugar))
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -174,17 +175,19 @@ private fun DialogoAgregarEvento(onEvent: (EventosEvent) -> Unit) {
 
 @Composable
 private fun DialogoEditarEvento(evento: Evento, onEvent: (EventosEvent) -> Unit) {
-    var titulo by remember(evento.id) { mutableStateOf(evento.titulo) }
-    var tipo by remember(evento.id) { mutableStateOf(evento.tipo) }
-    var horaStr by remember(evento.id) {
+    var formData by remember(evento.id) {
         mutableStateOf(
-            java.time.Instant.ofEpochMilli(evento.fechaHoraEpocaMs)
-                .atZone(ZoneId.systemDefault()).toLocalTime()
-                .format(DateTimeFormatter.ofPattern("HH:mm"))
+            FormularioEventoData(
+                titulo = evento.titulo,
+                tipo = evento.tipo,
+                horaStr = java.time.Instant.ofEpochMilli(evento.fechaHoraEpocaMs)
+                    .atZone(ZoneId.systemDefault()).toLocalTime()
+                    .format(DateTimeFormatter.ofPattern("HH:mm")),
+                duracionStr = evento.duracionHoras.toString(),
+                lugar = evento.lugar
+            )
         )
     }
-    var duracionStr by remember(evento.id) { mutableStateOf(evento.duracionHoras.toString()) }
-    var lugar by remember(evento.id) { mutableStateOf(evento.lugar) }
 
     AlertDialog(
         onDismissRequest = { onEvent(EventosEvent.OnToggleEditDialog) },
@@ -192,11 +195,8 @@ private fun DialogoEditarEvento(evento: Evento, onEvent: (EventosEvent) -> Unit)
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FormularioEvento(
-                    titulo = titulo, onTituloChange = { titulo = it },
-                    tipo = tipo, onTipoChange = { tipo = it },
-                    horaStr = horaStr, onHoraChange = { horaStr = it },
-                    duracionStr = duracionStr, onDuracionChange = { duracionStr = it },
-                    lugar = lugar, onLugarChange = { lugar = it }
+                    data = formData,
+                    onDataChange = { formData = it }
                 )
                 TextButton(
                     onClick = { onEvent(EventosEvent.OnEliminarEvento) },
@@ -212,9 +212,9 @@ private fun DialogoEditarEvento(evento: Evento, onEvent: (EventosEvent) -> Unit)
             Button(
                 onClick = {
                     try {
-                        val time = LocalTime.parse(horaStr)
-                        val dur = duracionStr.toFloatOrNull() ?: 1f
-                        onEvent(EventosEvent.OnActualizarEvento(titulo, tipo, time, dur, lugar))
+                        val time = LocalTime.parse(formData.horaStr)
+                        val dur = formData.duracionStr.toFloatOrNull() ?: 1f
+                        onEvent(EventosEvent.OnActualizarEvento(formData.titulo, formData.tipo, time, dur, formData.lugar))
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -231,20 +231,17 @@ private fun DialogoEditarEvento(evento: Evento, onEvent: (EventosEvent) -> Unit)
 
 @Composable
 private fun FormularioEvento(
-    titulo: String, onTituloChange: (String) -> Unit,
-    tipo: String, onTipoChange: (String) -> Unit,
-    horaStr: String, onHoraChange: (String) -> Unit,
-    duracionStr: String, onDuracionChange: (String) -> Unit,
-    lugar: String, onLugarChange: (String) -> Unit
+    data: FormularioEventoData,
+    onDataChange: (FormularioEventoData) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(value = titulo, onValueChange = onTituloChange, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-        OutlinedTextField(value = tipo, onValueChange = onTipoChange, label = { Text("Tipo (Partido, Pago, Reunión)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+        OutlinedTextField(value = data.titulo, onValueChange = { onDataChange(data.copy(titulo = it)) }, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+        OutlinedTextField(value = data.tipo, onValueChange = { onDataChange(data.copy(tipo = it)) }, label = { Text("Tipo (Partido, Pago, Reunión)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = horaStr, onValueChange = onHoraChange, label = { Text("Hora (HH:mm)") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
-            OutlinedTextField(value = duracionStr, onValueChange = onDuracionChange, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+            OutlinedTextField(value = data.horaStr, onValueChange = { onDataChange(data.copy(horaStr = it)) }, label = { Text("Hora (HH:mm)") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+            OutlinedTextField(value = data.duracionStr, onValueChange = { onDataChange(data.copy(duracionStr = it)) }, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
         }
-        OutlinedTextField(value = lugar, onValueChange = onLugarChange, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+        OutlinedTextField(value = data.lugar, onValueChange = { onDataChange(data.copy(lugar = it)) }, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
     }
 }
 
