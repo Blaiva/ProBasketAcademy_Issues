@@ -6,57 +6,59 @@ import com.probasketacademy.domain.repository.JugadorRepository
 import com.probasketacademy.domain.repository.PagoRepository
 import javax.inject.Inject
 
+data class DatosPagoJugador(
+    val jugador: Jugador,
+    val concepto: String,
+    val montoTotal: Double,
+    val montoAbonado: Double,
+    val fecha: String,
+    val tipoInscripcion: String,
+    val fechaInicio: String,
+    val fechaVencimiento: String
+)
+
 class RegistrarPagoJugadorUseCase @Inject constructor(
     private val pagoRepository: PagoRepository,
     private val jugadorRepository: JugadorRepository
 ) {
-    suspend operator fun invoke(
-        jugador: Jugador,
-        concepto: String,
-        montoTotal: Double,
-        montoAbonado: Double,
-        fecha: String,
-        tipoInscripcion: String,
-        fechaInicio: String,
-        fechaVencimiento: String
-    ): Result<Unit> {
-        if (montoTotal <= 0.0) {
+    suspend operator fun invoke(datos: DatosPagoJugador): Result<Unit> {
+        if (datos.montoTotal <= 0.0) {
             return Result.failure(IllegalArgumentException("El monto total debe ser mayor a 0"))
         }
-        if (montoAbonado < 0.0) {
+        if (datos.montoAbonado < 0.0) {
             return Result.failure(IllegalArgumentException("El monto abonado no puede ser negativo"))
         }
 
-        val deuda = (montoTotal - montoAbonado).coerceAtLeast(0.0)
+        val deuda = (datos.montoTotal - datos.montoAbonado).coerceAtLeast(0.0)
         val estado = when {
             deuda <= 0.0 -> "PAGADO"
-            montoAbonado > 0.0 -> "ABONADO"
+            datos.montoAbonado > 0.0 -> "ABONADO"
             else -> "PENDIENTE"
         }
 
         val nuevoPago = Pago(
-            jugadorId = jugador.jugadorId,
-            concepto = concepto.ifBlank { "Cuota Academia" },
-            montoTotal = montoTotal,
-            montoPagado = montoAbonado,
+            jugadorId = datos.jugador.jugadorId,
+            concepto = datos.concepto.ifBlank { "Cuota Academia" },
+            montoTotal = datos.montoTotal,
+            montoPagado = datos.montoAbonado,
             deuda = deuda,
-            fecha = fecha,
+            fecha = datos.fecha,
             estado = estado,
-            jugadorNombre = jugador.nombre,
-            numeroCamiseta = jugador.numeroCamiseta
+            jugadorNombre = datos.jugador.nombre,
+            numeroCamiseta = datos.jugador.numeroCamiseta
         )
 
         return runCatching {
             pagoRepository.registrarPago(nuevoPago)
 
-            val jugadorActualizado = jugador.copy(
-                totalGenerado = jugador.totalGenerado + montoTotal,
-                totalPagado = jugador.totalPagado + montoAbonado,
-                deudaActual = jugador.deudaActual + deuda,
-                tipoInscripcion = tipoInscripcion,
-                fechaInicio = fechaInicio,
-                fechaVencimiento = fechaVencimiento,
-                cuota = montoTotal
+            val jugadorActualizado = datos.jugador.copy(
+                totalGenerado = datos.jugador.totalGenerado + datos.montoTotal,
+                totalPagado = datos.jugador.totalPagado + datos.montoAbonado,
+                deudaActual = datos.jugador.deudaActual + deuda,
+                tipoInscripcion = datos.tipoInscripcion,
+                fechaInicio = datos.fechaInicio,
+                fechaVencimiento = datos.fechaVencimiento,
+                cuota = datos.montoTotal
             )
             jugadorRepository.guardarJugador(jugadorActualizado)
         }

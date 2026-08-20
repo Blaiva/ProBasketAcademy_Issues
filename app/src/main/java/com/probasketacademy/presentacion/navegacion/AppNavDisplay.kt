@@ -63,12 +63,13 @@ fun AppNavDisplay(
         backStack.add(Screen.Auth)
     }
 
-    val showBottomBar = currentScreen is Screen.Home ||
-            currentScreen is Screen.Jugadores ||
-            currentScreen is Screen.Categorias ||
-            currentScreen is Screen.Eventos ||
-            currentScreen is Screen.Asistencias ||
-            currentScreen is Screen.Pagos
+    val navigateBack: () -> Unit = {
+        if (backStack.isNotEmpty()) {
+            backStack.removeAt(backStack.size - 1)
+        }
+    }
+
+    val showBottomBar = isMainScreen(currentScreen)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -109,7 +110,7 @@ fun AppNavDisplay(
                 entry<Screen.JugadorEdit> { key ->
                     JugadorEditScreen(
                         jugadorId = key.jugadorId,
-                        onNavigateBack = { if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) }
+                        onNavigateBack = navigateBack
                     )
                 }
 
@@ -123,7 +124,7 @@ fun AppNavDisplay(
                 entry<Screen.CategoriaDetalle> { key ->
                     CategoriaDetalleScreen(
                         categoriaId = key.categoriaId,
-                        onNavigateBack = { if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) }
+                        onNavigateBack = navigateBack
                     )
                 }
 
@@ -149,14 +150,21 @@ fun AppNavDisplay(
                 entry<Screen.PagosDetalle> { key ->
                     PagosDetalleScreen(
                         jugadorId = key.jugadorId,
-                        onNavigateBack = {
-                            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
-                        }
+                        onNavigateBack = navigateBack
                     )
                 }
             }
         )
     }
+}
+
+private fun isMainScreen(currentScreen: NavKey?): Boolean {
+    return currentScreen is Screen.Home ||
+            currentScreen is Screen.Jugadores ||
+            currentScreen is Screen.Categorias ||
+            currentScreen is Screen.Eventos ||
+            currentScreen is Screen.Asistencias ||
+            currentScreen is Screen.Pagos
 }
 
 @Composable
@@ -182,18 +190,7 @@ private fun ProBasketBottomBar(
 
             NavigationBarItem(
                 selected = isSelected,
-                onClick = {
-                    if (currentScreen != item.route) {
-                        val existingIndex = backStack.indexOf(item.route)
-                        if (existingIndex != -1) {
-                            while (backStack.lastIndex > existingIndex) {
-                                backStack.removeAt(backStack.lastIndex)
-                            }
-                        } else {
-                            backStack.add(item.route)
-                        }
-                    }
-                },
+                onClick = { handleBottomNavClick(backStack, currentScreen, item.route) },
                 icon = {
                     Icon(
                         imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
@@ -216,5 +213,22 @@ private fun ProBasketBottomBar(
                 )
             )
         }
+    }
+}
+
+private fun handleBottomNavClick(
+    backStack: MutableList<NavKey>,
+    currentScreen: NavKey?,
+    targetRoute: Screen
+) {
+    if (currentScreen == targetRoute) return
+
+    val existingIndex = backStack.indexOf(targetRoute)
+    if (existingIndex != -1) {
+        while (backStack.lastIndex > existingIndex) {
+            backStack.removeAt(backStack.lastIndex)
+        }
+    } else {
+        backStack.add(targetRoute)
     }
 }

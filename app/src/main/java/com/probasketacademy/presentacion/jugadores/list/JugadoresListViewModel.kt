@@ -30,10 +30,8 @@ class JugadoresListViewModel @Inject constructor(
                     buscarJugadores(event.query)
                 }
             }
-            is JugadoresListEvent.OnAddJugadorClicked -> {
-            }
-            is JugadoresListEvent.OnJugadorClicked -> {
-            }
+            is JugadoresListEvent.OnAddJugadorClicked -> Unit
+            is JugadoresListEvent.OnJugadorClicked -> Unit
         }
     }
 

@@ -65,7 +65,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             obtenerIngresosTotalesUseCase().collectLatest { total ->
                 val ingresos = total ?: 0.0
-                val formatoMoneda = NumberFormat.getNumberInstance(Locale("es", "DO"))
+                val formatoMoneda = NumberFormat.getNumberInstance(Locale.Builder().setLanguage("es").setRegion("DO").build())
                 val ingresoStr = "$${formatoMoneda.format(ingresos)}"
                 _uiState.update { it.copy(isLoading = false, ingresosMes = ingresoStr) }
             }

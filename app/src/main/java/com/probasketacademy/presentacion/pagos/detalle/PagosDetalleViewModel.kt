@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.probasketacademy.domain.model.Pago
 import com.probasketacademy.domain.repository.JugadorRepository
+import com.probasketacademy.domain.usecase.pago.DatosPagoJugador
 import com.probasketacademy.domain.usecase.pago.MarcarPagoComoPagadoUseCase
 import com.probasketacademy.domain.usecase.pago.ObtenerPagosPorJugadorUseCase
 import com.probasketacademy.domain.usecase.pago.RegistrarAbonoUseCase
@@ -104,7 +105,9 @@ class PagosDetalleViewModel @Inject constructor(
             }
 
             _uiState.update { it.copy(fechaVencimiento = sdf.format(calendar.time)) }
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun cargarDatos(id: Long) {
@@ -139,18 +142,20 @@ class PagosDetalleViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, showPagoDialog = false) }
-            val sdfPago = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
+            val sdfPago = SimpleDateFormat("dd MMM yyyy", Locale.Builder().setLanguage("es").setRegion("ES").build())
             val fechaActual = sdfPago.format(Date())
 
             registrarPagoJugadorUseCase(
-                jugador = jugador,
-                concepto = concepto,
-                montoTotal = montoTotal,
-                montoAbonado = montoAbonado,
-                fecha = fechaActual,
-                tipoInscripcion = state.tipoInscripcion,
-                fechaInicio = state.fechaInicio,
-                fechaVencimiento = state.fechaVencimiento
+                DatosPagoJugador(
+                    jugador = jugador,
+                    concepto = concepto,
+                    montoTotal = montoTotal,
+                    montoAbonado = montoAbonado,
+                    fecha = fechaActual,
+                    tipoInscripcion = state.tipoInscripcion,
+                    fechaInicio = state.fechaInicio,
+                    fechaVencimiento = state.fechaVencimiento
+                )
             ).onSuccess {
                 _uiState.update { it.copy(isLoading = false, conceptoInput = "", montoTotalInput = "", montoAbonadoInput = "") }
             }.onFailure { e ->

@@ -18,35 +18,35 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+interface RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindJugadorRepository(
+    fun bindJugadorRepository(
         impl: JugadorRepositoryImpl
     ): JugadorRepository
 
     @Binds
     @Singleton
-    abstract fun bindCategoriaRepository(
+    fun bindCategoriaRepository(
         impl: CategoriaRepositoryImpl
     ): CategoriaRepository
 
     @Binds
     @Singleton
-    abstract fun bindAsistenciaRepository(
+    fun bindAsistenciaRepository(
         impl: AsistenciaRepositoryImpl
     ): AsistenciaRepository
 
     @Binds
     @Singleton
-    abstract fun bindPagoRepository(
+    fun bindPagoRepository(
         impl: PagoRepositoryImpl
     ): PagoRepository
 
     @Binds
     @Singleton
-    abstract fun bindEventoRepository(
+    fun bindEventoRepository(
         impl: EventoRepositoryImpl
     ): EventoRepository
 }
