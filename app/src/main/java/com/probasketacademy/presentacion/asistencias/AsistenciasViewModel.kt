@@ -60,6 +60,12 @@ class AsistenciasViewModel @Inject constructor(
                 }
                 cargarDatosPorFecha(_uiState.value.selectedDate)
             }
+            is AsistenciasEvent.OnConfirmarAsistencia -> {
+                _uiState.update { it.copy(isSaved = true) }
+            }
+            is AsistenciasEvent.OnResetGuardado -> {
+                _uiState.update { it.copy(isSaved = false) }
+            }
         }
     }
 
