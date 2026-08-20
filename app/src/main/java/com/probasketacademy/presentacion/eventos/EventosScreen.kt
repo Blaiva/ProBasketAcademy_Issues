@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +29,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import com.google.firebase.auth.FirebaseAuth
+import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
@@ -35,6 +41,7 @@ import com.probasketacademy.R
 import com.probasketacademy.domain.model.Evento
 import com.probasketacademy.presentacion.perfil.ProfileDialog
 import com.probasketacademy.ui.theme.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -54,11 +61,13 @@ fun EventosScreen(
 
     if (showProfileDialog) {
         ProfileDialog(
-            user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser,
+            user = FirebaseAuth.getInstance().currentUser,
             onDismiss = { showProfileDialog = false },
             onLogout = { showProfileDialog = false; onLogout() }
         )
     }
+
+    ManejoDeDialogosEventos(state, viewModel::onEvent)
 
     EventosContent(
         state = state,
@@ -67,7 +76,6 @@ fun EventosScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventosContent(
     state: EventosState,
@@ -77,15 +85,11 @@ fun EventosContent(
     val coroutineScope = rememberCoroutineScope()
     val today = remember { LocalDate.now() }
     val currentMonth = remember { YearMonth.now() }
-    val startMonth = remember { currentMonth.minusMonths(24) }
-    val endMonth = remember { currentMonth.plusMonths(24) }
-    val firstDayOfWeek = remember { firstDayOfWeekFromLocale() }
-
     val calendarState = rememberCalendarState(
-        startMonth = startMonth,
-        endMonth = endMonth,
+        startMonth = currentMonth.minusMonths(24),
+        endMonth = currentMonth.plusMonths(24),
         firstVisibleMonth = currentMonth,
-        firstDayOfWeek = firstDayOfWeek
+        firstDayOfWeek = remember { firstDayOfWeekFromLocale() }
     )
     val visibleMonth = calendarState.firstVisibleMonth.yearMonth
 
@@ -93,114 +97,8 @@ fun EventosContent(
         onEvent(EventosEvent.OnVisibleMonthChanged(visibleMonth))
     }
 
-    if (state.showAddDialog) {
-        var titulo by remember { mutableStateOf("") }
-        var tipo by remember { mutableStateOf("") }
-        var horaStr by remember { mutableStateOf("") }
-        var duracionStr by remember { mutableStateOf("") }
-        var lugar by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { onEvent(EventosEvent.OnToggleAddDialog) },
-            title = { Text("Nuevo Evento", fontWeight = FontWeight.Bold, color = TextDark) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    OutlinedTextField(value = tipo, onValueChange = { tipo = it }, label = { Text("Tipo (Partido, Pago, Reunión)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = horaStr, onValueChange = { horaStr = it }, label = { Text("Hora (HH:mm)") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
-                        OutlinedTextField(value = duracionStr, onValueChange = { duracionStr = it }, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
-                    }
-                    OutlinedTextField(value = lugar, onValueChange = { lugar = it }, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        try {
-                            val time = LocalTime.parse(horaStr)
-                            val dur = duracionStr.toFloatOrNull() ?: 1f
-                            onEvent(EventosEvent.OnGuardarEvento(titulo, tipo, time, dur, lugar))
-                        } catch (e: Exception) { }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
-                ) { Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { onEvent(EventosEvent.OnToggleAddDialog) }) { Text("Cancelar", color = TextMuted) }
-            },
-            containerColor = CardBackground
-        )
-    }
-
-    if (state.showEditDialog && state.eventoSeleccionado != null) {
-        val evento = state.eventoSeleccionado
-        var titulo by remember(evento.id) { mutableStateOf(evento.titulo) }
-        var tipo by remember(evento.id) { mutableStateOf(evento.tipo) }
-        var horaStr by remember(evento.id) {
-            mutableStateOf(
-                java.time.Instant.ofEpochMilli(evento.fechaHoraEpocaMs)
-                    .atZone(ZoneId.systemDefault()).toLocalTime()
-                    .format(DateTimeFormatter.ofPattern("HH:mm"))
-            )
-        }
-        var duracionStr by remember(evento.id) { mutableStateOf(evento.duracionHoras.toString()) }
-        var lugar by remember(evento.id) { mutableStateOf(evento.lugar) }
-
-        AlertDialog(
-            onDismissRequest = { onEvent(EventosEvent.OnToggleEditDialog) },
-            title = { Text("Editar Evento", fontWeight = FontWeight.Bold, color = TextDark) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    OutlinedTextField(value = tipo, onValueChange = { tipo = it }, label = { Text("Tipo (Partido, Pago, Reunión)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = horaStr, onValueChange = { horaStr = it }, label = { Text("Hora (HH:mm)") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
-                        OutlinedTextField(value = duracionStr, onValueChange = { duracionStr = it }, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
-                    }
-                    OutlinedTextField(value = lugar, onValueChange = { lugar = it }, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    TextButton(
-                        onClick = { onEvent(EventosEvent.OnEliminarEvento) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Eliminar Evento", color = Color.Red, fontWeight = FontWeight.Bold)
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        try {
-                            val time = LocalTime.parse(horaStr)
-                            val dur = duracionStr.toFloatOrNull() ?: 1f
-                            onEvent(EventosEvent.OnActualizarEvento(titulo, tipo, time, dur, lugar))
-                        } catch (e: Exception) { }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
-                ) { Text("Guardar Cambios", color = Color.White, fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { onEvent(EventosEvent.OnToggleEditDialog) }) { Text("Cancelar", color = TextMuted) }
-            },
-            containerColor = CardBackground
-        )
-    }
-
     Scaffold(
-        floatingActionButton = {
-            if (!state.selectedDate.isBefore(today)) {
-                FloatingActionButton(
-                    onClick = { onEvent(EventosEvent.OnToggleAddDialog) },
-                    containerColor = HeaderOrange,
-                    contentColor = Color.White,
-                    shape = CircleShape
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Agregar Evento", modifier = Modifier.size(28.dp))
-                }
-            }
-        },
+        floatingActionButton = { BotonAgregarEvento(state.selectedDate, today, onEvent) },
         containerColor = LightBackground
     ) { padding ->
         LazyColumn(
@@ -208,159 +106,298 @@ fun EventosContent(
             contentPadding = PaddingValues(bottom = 88.dp)
         ) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(HeaderOrange, RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
-                        .padding(horizontal = 16.dp, vertical = 20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier.size(36.dp).background(Color.White, CircleShape).padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) { Image(painter = painterResource(id = R.drawable.logo_probasket), contentDescription = "Logo", modifier = Modifier.fillMaxSize()) }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("ProBasketAcademy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-
-                        val isPreview = androidx.compose.ui.platform.LocalInspectionMode.current
-                        val photoUrl = if (!isPreview) {
-                            com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.photoUrl?.toString()
-                        } else null
-
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.2f))
-                                .clickable { onProfileClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (!photoUrl.isNullOrEmpty()) {
-                                coil3.compose.AsyncImage(
-                                    model = photoUrl,
-                                    contentDescription = "Perfil",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Perfil",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                }
+                EventosHeader(onProfileClick)
                 Spacer(modifier = Modifier.height(16.dp))
             }
+
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = CardBackground),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-                ) {
-                    Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-                        val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "$monthName ${visibleMonth.year}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
-                            Row {
-                                IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) {
-                                    Icon(Icons.Default.ChevronLeft, contentDescription = "Mes Anterior", tint = TextDark)
-                                }
-                                IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.plusMonths(1)) } }) {
-                                    Icon(Icons.Default.ChevronRight, contentDescription = "Mes Siguiente", tint = TextDark)
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            for (day in daysOfWeek) {
-                                Text(
-                                    text = day,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextMuted,
-                                    modifier = Modifier.weight(1f),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        HorizontalCalendar(
-                            state = calendarState,
-                            dayContent = { day ->
-                                DayCell(
-                                    day = day,
-                                    isSelected = state.selectedDate == day.date,
-                                    isPast = day.date.isBefore(today),
-                                    hasEvent = state.diasConEventos.contains(day.date),
-                                    onClick = {
-                                        onEvent(EventosEvent.OnDateSelected(it.date))
-                                    }
-                                )
-                            }
-                        )
-                    }
-                }
+                CalendarioEventos(calendarState, visibleMonth, state, today, onEvent, coroutineScope)
                 Spacer(modifier = Modifier.height(24.dp))
             }
-            item {
-                val dayName = state.selectedDate.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
-                val dayNum = state.selectedDate.dayOfMonth
-                val monthNameTitle = state.selectedDate.month.getDisplayName(TextStyle.SHORT, Locale("es", "ES")).replaceFirstChar { it.uppercase() }
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+
+            seccionListaEventos(state, today, onEvent)
+        }
+    }
+}
+
+@Composable
+private fun ManejoDeDialogosEventos(state: EventosState, onEvent: (EventosEvent) -> Unit) {
+    if (state.showAddDialog) {
+        DialogoAgregarEvento(onEvent)
+    }
+
+    if (state.showEditDialog && state.eventoSeleccionado != null) {
+        DialogoEditarEvento(state.eventoSeleccionado, onEvent)
+    }
+}
+
+@Composable
+private fun DialogoAgregarEvento(onEvent: (EventosEvent) -> Unit) {
+    var titulo by remember { mutableStateOf("") }
+    var tipo by remember { mutableStateOf("") }
+    var horaStr by remember { mutableStateOf("") }
+    var duracionStr by remember { mutableStateOf("") }
+    var lugar by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { onEvent(EventosEvent.OnToggleAddDialog) },
+        title = { Text("Nuevo Evento", fontWeight = FontWeight.Bold, color = TextDark) },
+        text = {
+            FormularioEvento(
+                titulo = titulo, onTituloChange = { titulo = it },
+                tipo = tipo, onTipoChange = { tipo = it },
+                horaStr = horaStr, onHoraChange = { horaStr = it },
+                duracionStr = duracionStr, onDuracionChange = { duracionStr = it },
+                lugar = lugar, onLugarChange = { lugar = it }
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    try {
+                        val time = LocalTime.parse(horaStr)
+                        val dur = duracionStr.toFloatOrNull() ?: 1f
+                        onEvent(EventosEvent.OnGuardarEvento(titulo, tipo, time, dur, lugar))
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+            ) { Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = { onEvent(EventosEvent.OnToggleAddDialog) }) { Text("Cancelar", color = TextMuted) }
+        },
+        containerColor = CardBackground
+    )
+}
+
+@Composable
+private fun DialogoEditarEvento(evento: Evento, onEvent: (EventosEvent) -> Unit) {
+    var titulo by remember(evento.id) { mutableStateOf(evento.titulo) }
+    var tipo by remember(evento.id) { mutableStateOf(evento.tipo) }
+    var horaStr by remember(evento.id) {
+        mutableStateOf(
+            java.time.Instant.ofEpochMilli(evento.fechaHoraEpocaMs)
+                .atZone(ZoneId.systemDefault()).toLocalTime()
+                .format(DateTimeFormatter.ofPattern("HH:mm"))
+        )
+    }
+    var duracionStr by remember(evento.id) { mutableStateOf(evento.duracionHoras.toString()) }
+    var lugar by remember(evento.id) { mutableStateOf(evento.lugar) }
+
+    AlertDialog(
+        onDismissRequest = { onEvent(EventosEvent.OnToggleEditDialog) },
+        title = { Text("Editar Evento", fontWeight = FontWeight.Bold, color = TextDark) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FormularioEvento(
+                    titulo = titulo, onTituloChange = { titulo = it },
+                    tipo = tipo, onTipoChange = { tipo = it },
+                    horaStr = horaStr, onHoraChange = { horaStr = it },
+                    duracionStr = duracionStr, onDuracionChange = { duracionStr = it },
+                    lugar = lugar, onLugarChange = { lugar = it }
+                )
+                TextButton(
+                    onClick = { onEvent(EventosEvent.OnEliminarEvento) },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = if (state.selectedDate == today) "Hoy, $dayNum $monthNameTitle" else "$dayName, $dayNum $monthNameTitle",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = TextDark
-                    )
-                    Box(
-                        modifier = Modifier.background(IndicatorColor, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text("${state.eventosDelDia.size} Eventos", color = HeaderOrange, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Eliminar Evento", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
-                Spacer(modifier = Modifier.height(16.dp))
             }
-            if (state.isLoading) {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = HeaderOrange)
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    try {
+                        val time = LocalTime.parse(horaStr)
+                        val dur = duracionStr.toFloatOrNull() ?: 1f
+                        onEvent(EventosEvent.OnActualizarEvento(titulo, tipo, time, dur, lugar))
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = HeaderOrange)
+            ) { Text("Guardar Cambios", color = Color.White, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = { onEvent(EventosEvent.OnToggleEditDialog) }) { Text("Cancelar", color = TextMuted) }
+        },
+        containerColor = CardBackground
+    )
+}
+
+@Composable
+private fun FormularioEvento(
+    titulo: String, onTituloChange: (String) -> Unit,
+    tipo: String, onTipoChange: (String) -> Unit,
+    horaStr: String, onHoraChange: (String) -> Unit,
+    duracionStr: String, onDuracionChange: (String) -> Unit,
+    lugar: String, onLugarChange: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(value = titulo, onValueChange = onTituloChange, label = { Text("Concepto") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+        OutlinedTextField(value = tipo, onValueChange = onTipoChange, label = { Text("Tipo (Partido, Pago, Reunión)") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(value = horaStr, onValueChange = onHoraChange, label = { Text("Hora (HH:mm)") }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+            OutlinedTextField(value = duracionStr, onValueChange = onDuracionChange, label = { Text("Duración (h)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp))
+        }
+        OutlinedTextField(value = lugar, onValueChange = onLugarChange, label = { Text("Lugar o Subtítulo") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+    }
+}
+
+@Composable
+private fun BotonAgregarEvento(selectedDate: LocalDate, today: LocalDate, onEvent: (EventosEvent) -> Unit) {
+    if (!selectedDate.isBefore(today)) {
+        FloatingActionButton(
+            onClick = { onEvent(EventosEvent.OnToggleAddDialog) },
+            containerColor = HeaderOrange,
+            contentColor = Color.White,
+            shape = CircleShape
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Agregar Evento", modifier = Modifier.size(28.dp))
+        }
+    }
+}
+
+@Composable
+private fun EventosHeader(onProfileClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(HeaderOrange, RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
+            .padding(horizontal = 16.dp, vertical = 20.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(36.dp).background(Color.White, CircleShape).padding(4.dp), contentAlignment = Alignment.Center) {
+                    Image(painter = painterResource(id = R.drawable.logo_probasket), contentDescription = "Logo", modifier = Modifier.fillMaxSize())
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("ProBasketAcademy", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            }
+
+            val isPreview = LocalInspectionMode.current
+            val photoUrl = if (!isPreview) FirebaseAuth.getInstance().currentUser?.photoUrl?.toString() else null
+
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .clickable { onProfileClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (!photoUrl.isNullOrEmpty()) {
+                    AsyncImage(model = photoUrl, contentDescription = "Perfil", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                } else {
+                    Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarioEventos(
+    calendarState: CalendarState,
+    visibleMonth: YearMonth,
+    state: EventosState,
+    today: LocalDate,
+    onEvent: (EventosEvent) -> Unit,
+    coroutineScope: CoroutineScope
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
+            val monthName = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es")).replaceFirstChar { it.uppercase() }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "$monthName ${visibleMonth.year}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TextDark)
+                Row {
+                    IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.minusMonths(1)) } }) {
+                        Icon(Icons.Default.ChevronLeft, contentDescription = "Mes Anterior", tint = TextDark)
+                    }
+                    IconButton(onClick = { coroutineScope.launch { calendarState.animateScrollToMonth(visibleMonth.plusMonths(1)) } }) {
+                        Icon(Icons.Default.ChevronRight, contentDescription = "Mes Siguiente", tint = TextDark)
                     }
                 }
-            } else if (state.eventosDelDia.isEmpty()) {
-                item {
-                    val mensajeVacio = if (state.selectedDate.isBefore(today)) "No hubo eventos programados este día." else "Día libre, no hay eventos programados."
-                    Text(mensajeVacio, color = TextMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(32.dp))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            DiasDeLaSemanaRow()
+            Spacer(modifier = Modifier.height(8.dp))
+
+            HorizontalCalendar(
+                state = calendarState,
+                dayContent = { day ->
+                    DayCell(
+                        day = day,
+                        isSelected = state.selectedDate == day.date,
+                        isPast = day.date.isBefore(today),
+                        hasEvent = state.diasConEventos.contains(day.date),
+                        onClick = { onEvent(EventosEvent.OnDateSelected(it.date)) }
+                    )
                 }
-            } else {
-                items(state.eventosDelDia) { evento ->
-                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                        EventoItemRow(
-                            evento = evento,
-                            onClick = { onEvent(EventosEvent.OnEventoClicked(evento)) }
-                        )
-                    }
-                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun DiasDeLaSemanaRow() {
+    val daysOfWeek = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+    Row(modifier = Modifier.fillMaxWidth()) {
+        for (day in daysOfWeek) {
+            Text(text = day, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMuted, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+        }
+    }
+}
+
+private fun LazyListScope.seccionListaEventos(state: EventosState, today: LocalDate, onEvent: (EventosEvent) -> Unit) {
+    item {
+        val dayName = state.selectedDate.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("es")).replaceFirstChar { it.uppercase() }
+        val dayNum = state.selectedDate.dayOfMonth
+        val monthNameTitle = state.selectedDate.month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("es")).replaceFirstChar { it.uppercase() }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (state.selectedDate == today) "Hoy, $dayNum $monthNameTitle" else "$dayName, $dayNum $monthNameTitle",
+                fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = TextDark
+            )
+            Box(modifier = Modifier.background(IndicatorColor, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
+                Text("${state.eventosDelDia.size} Eventos", color = HeaderOrange, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+
+    if (state.isLoading) {
+        item {
+            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = HeaderOrange)
+            }
+        }
+    } else if (state.eventosDelDia.isEmpty()) {
+        item {
+            val mensajeVacio = if (state.selectedDate.isBefore(today)) "No hubo eventos programados este día." else "Día libre, no hay eventos programados."
+            Text(mensajeVacio, color = TextMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(32.dp))
+        }
+    } else {
+        items(state.eventosDelDia) { evento ->
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                EventoItemRow(evento = evento, onClick = { onEvent(EventosEvent.OnEventoClicked(evento)) })
             }
         }
     }
@@ -376,32 +413,19 @@ fun DayCell(day: CalendarDay, isSelected: Boolean, isPast: Boolean, hasEvent: Bo
         else -> TextDark
     }
     val bgColor = if (isSelected) HeaderOrange else Color.Transparent
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .padding(4.dp)
             .clip(CircleShape)
             .background(bgColor)
-            .clickable(
-                enabled = isCurrentMonth,
-                onClick = { onClick(day) }
-            ),
+            .clickable(enabled = isCurrentMonth, onClick = { onClick(day) }),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = day.date.dayOfMonth.toString(),
-            color = textColor,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            fontSize = 14.sp
-        )
+        Text(text = day.date.dayOfMonth.toString(), color = textColor, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp)
         if (hasEvent) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 4.dp)
-                    .size(4.dp)
-                    .background(if (isSelected) Color.White else BlueIcon, CircleShape)
-            )
+            Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp).size(4.dp).background(if (isSelected) Color.White else BlueIcon, CircleShape))
         }
     }
 }
@@ -415,39 +439,14 @@ fun EventoItemRow(evento: Evento, onClick: () -> Unit) {
     val subtitleIcon: ImageVector
 
     when (evento.tipo.lowercase()) {
-        "partido" -> {
-            lineColor = BlueIcon
-            iconBg = Color(0xFFEBF3FF)
-            iconTint = BlueIcon
-            iconVector = Icons.Default.Flag
-            subtitleIcon = Icons.Default.EmojiEvents
-        }
-        "pago", "cuota" -> {
-            lineColor = GreenTrend
-            iconBg = Color(0xFFE8F5E9)
-            iconTint = GreenTrend
-            iconVector = Icons.Default.Payments
-            subtitleIcon = Icons.Default.Notifications
-        }
-        "reunión", "reunion" -> {
-            lineColor = TextMuted
-            iconBg = DividerColor
-            iconTint = TextMuted
-            iconVector = Icons.Default.Chat
-            subtitleIcon = Icons.Default.Group
-        }
-        else -> {
-            lineColor = HeaderOrange
-            iconBg = IndicatorColor
-            iconTint = HeaderOrange
-            iconVector = Icons.Default.SportsBasketball
-            subtitleIcon = Icons.Default.LocationOn
-        }
+        "partido" -> { lineColor = BlueIcon; iconBg = Color(0xFFEBF3FF); iconTint = BlueIcon; iconVector = Icons.Default.Flag; subtitleIcon = Icons.Default.EmojiEvents }
+        "pago", "cuota" -> { lineColor = GreenTrend; iconBg = Color(0xFFE8F5E9); iconTint = GreenTrend; iconVector = Icons.Default.Payments; subtitleIcon = Icons.Default.Notifications }
+        "reunión", "reunion" -> { lineColor = TextMuted; iconBg = DividerColor; iconTint = TextMuted; iconVector = Icons.Default.Chat; subtitleIcon = Icons.Default.Group }
+        else -> { lineColor = HeaderOrange; iconBg = IndicatorColor; iconTint = HeaderOrange; iconVector = Icons.Default.SportsBasketball; subtitleIcon = Icons.Default.LocationOn }
     }
 
     val time = java.time.Instant.ofEpochMilli(evento.fechaHoraEpocaMs).atZone(ZoneId.systemDefault()).toLocalTime()
     val formatter = DateTimeFormatter.ofPattern("HH:mm")
-
     val durationText = if (evento.duracionHoras > 0f && evento.duracionHoras < 1f) {
         "${(evento.duracionHoras * 60).toInt()}m"
     } else if (evento.duracionHoras % 1.0f == 0f) {
@@ -462,10 +461,7 @@ fun EventoItemRow(evento: Evento, onClick: () -> Unit) {
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(55.dp)) {
                 Text(text = time.format(formatter), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = TextDark)
                 Text(text = durationText, fontSize = 12.sp, color = TextMuted)
@@ -482,10 +478,7 @@ fun EventoItemRow(evento: Evento, onClick: () -> Unit) {
                     Text(text = evento.lugar, fontSize = 13.sp, color = TextMuted)
                 }
             }
-            Box(
-                modifier = Modifier.size(44.dp).background(iconBg, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.size(44.dp).background(iconBg, CircleShape), contentAlignment = Alignment.Center) {
                 Icon(iconVector, contentDescription = null, tint = iconTint, modifier = Modifier.size(22.dp))
             }
         }

@@ -129,7 +129,6 @@ fun AppNavDisplay(
 
                 entry<Screen.Asistencias> {
                     AsistenciasScreen(
-                        onNavigateBack = { if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1) },
                         onLogout = doLogout
                     )
                 }
