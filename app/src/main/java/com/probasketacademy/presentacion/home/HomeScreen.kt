@@ -280,7 +280,6 @@ private fun PendingPaymentsSection(pagos: List<Pago>, onClick: () -> Unit) {
 
 @Composable
 private fun PendingPaymentItemRow(pago: Pago) {
-    val context = LocalContext.current
     val initials = pago.jugadorNombre.split(" ").take(2).joinToString("") { it.take(1).uppercase() }
     Row(
         modifier = Modifier.fillMaxWidth(),

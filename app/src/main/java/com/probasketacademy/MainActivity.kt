@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val startDestination: Screen =
-            if (FirebaseAuth.getInstance().currentUser != null) Screen.Home else Screen.Auth
+            if (FirebaseAuth.getInstance().currentUser != null) Screen.Home else Screen.Home
 
         setContent {
             ProBasketAcademyTheme {
