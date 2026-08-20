@@ -45,6 +45,8 @@ import coil3.request.crossfade
 import com.probasketacademy.domain.model.Jugador
 import com.probasketacademy.ui.theme.*
 
+private const val NO_REGISTRADO = "No registrado"
+
 @Composable
 fun JugadorEditScreen(
     jugadorId: Long,
@@ -208,41 +210,81 @@ private fun SeccionTutor(state: JugadorEditState, onEvent: (JugadorEditEvent) ->
     }
     OutlinedTextField(value = state.tutorCorreo, onValueChange = { onEvent(JugadorEditEvent.OnTutorCorreoChanged(it)) }, label = { Text("Correo del Tutor") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), isError = state.tutorCorreoError != null, supportingText = state.tutorCorreoError?.let { { Text(it) } })
 }
+
 @Composable
 private fun SeccionEstadoDocumentacion(state: JugadorEditState, onEvent: (JugadorEditEvent) -> Unit) {
-    val context = LocalContext.current
-    val pickMediaActa = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let {
-            try { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (e: Exception) { e.printStackTrace() }
-            onEvent(JugadorEditEvent.OnActaNacimientoChanged(it.toString()))
-        }
-    }
-
     Card(colors = CardDefaults.cardColors(containerColor = CardBackground), shape = RoundedCornerShape(12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Jugador Activo", color = TextDark, fontWeight = FontWeight.Medium)
-                Switch(checked = state.estado.equals("Activo", ignoreCase = true), onCheckedChange = { isChecked -> onEvent(JugadorEditEvent.OnEstadoChanged(if (isChecked) "Activo" else "Inactivo")) }, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen))
-            }
+            EstadoJugadorRow(estado = state.estado, onEvent = onEvent)
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = BorderColor)
-            Row(modifier = Modifier.fillMaxWidth().clickable { pickMediaActa.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)).background(LightBackground), contentAlignment = Alignment.Center) {
-                    if (!state.actaNacimientoUri.isNullOrEmpty()) {
-                        AsyncImage(model = ImageRequest.Builder(context).data(state.actaNacimientoUri).crossfade(true).build(), contentDescription = "Acta", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                    } else {
-                        Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = TextMuted, modifier = Modifier.size(22.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Acta de Nacimiento", color = TextDark, fontWeight = FontWeight.Medium)
-                    Text(text = if (!state.actaNacimientoUri.isNullOrEmpty()) "Documento cargado" else "Toca para subir el documento", fontSize = 12.sp, color = if (!state.actaNacimientoUri.isNullOrEmpty()) SuccessGreen else TextMuted)
-                }
-                if (!state.actaNacimientoUri.isNullOrEmpty()) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(20.dp))
-            }
+            DocumentoActaRow(actaUri = state.actaNacimientoUri, onEvent = onEvent)
         }
     }
 }
+
+@Composable
+private fun EstadoJugadorRow(estado: String, onEvent: (JugadorEditEvent) -> Unit) {
+    val isActive = estado.equals("Activo", ignoreCase = true)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Jugador Activo", color = TextDark, fontWeight = FontWeight.Medium)
+        Switch(
+            checked = isActive,
+            onCheckedChange = { isChecked ->
+                onEvent(JugadorEditEvent.OnEstadoChanged(if (isChecked) "Activo" else "Inactivo"))
+            },
+            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
+        )
+    }
+}
+
+@Composable
+private fun DocumentoActaRow(actaUri: String?, onEvent: (JugadorEditEvent) -> Unit) {
+    val context = LocalContext.current
+    val pickMediaActa = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            onEvent(JugadorEditEvent.OnActaNacimientoChanged(it.toString()))
+        }
+    }
+    val hasDocument = !actaUri.isNullOrEmpty()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { pickMediaActa.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)).background(LightBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            if (hasDocument) {
+                AsyncImage(model = ImageRequest.Builder(context).data(actaUri).crossfade(true).build(), contentDescription = "Acta", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            } else {
+                Icon(Icons.Default.AddAPhoto, contentDescription = null, tint = TextMuted, modifier = Modifier.size(22.dp))
+            }
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Acta de Nacimiento", color = TextDark, fontWeight = FontWeight.Medium)
+            Text(
+                text = if (hasDocument) "Documento cargado" else "Toca para subir el documento",
+                fontSize = 12.sp,
+                color = if (hasDocument) SuccessGreen else TextMuted
+            )
+        }
+        if (hasDocument) Icon(Icons.Default.CheckCircle, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(20.dp))
+    }
+}
+
 @Composable
 private fun SeccionBotonesGuardar(state: JugadorEditState, onEvent: (JugadorEditEvent) -> Unit, onCancelEdit: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -351,7 +393,7 @@ private fun FichaUbicacion(state: JugadorEditState) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.LocationOn, contentDescription = null, tint = TextMuted, modifier = Modifier.size(22.dp))
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = state.domicilio.ifEmpty { "No registrado" }, fontSize = 15.sp, color = TextDark)
+                Text(text = state.domicilio.ifEmpty { NO_REGISTRADO }, fontSize = 15.sp, color = TextDark)
             }
         }
     }
@@ -368,13 +410,13 @@ private fun FichaTutor(state: JugadorEditState) {
                     Box(modifier = Modifier.size(40.dp).background(IndicatorColor, CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, contentDescription = null, tint = HeaderOrange, modifier = Modifier.size(20.dp)) }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = state.tutorNombre.ifEmpty { "No registrado" }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                        Text(text = state.tutorNombre.ifEmpty { NO_REGISTRADO }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
                         Text(text = state.tutorVinculo.ifEmpty { "Vínculo no definido" }, fontSize = 13.sp, color = TextMuted)
                     }
                 }
                 HorizontalDivider(color = DividerColor)
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Phone, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp)); Spacer(modifier = Modifier.width(12.dp)); Text(text = state.tutorTelefono.ifEmpty { "No registrado" }, fontSize = 15.sp, color = TextDark) }
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Email, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp)); Spacer(modifier = Modifier.width(12.dp)); Text(text = state.tutorCorreo.ifEmpty { "No registrado" }, fontSize = 15.sp, color = TextDark) }
+                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Phone, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp)); Spacer(modifier = Modifier.width(12.dp)); Text(text = state.tutorTelefono.ifEmpty { NO_REGISTRADO }, fontSize = 15.sp, color = TextDark) }
+                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.Email, contentDescription = null, tint = TextMuted, modifier = Modifier.size(20.dp)); Spacer(modifier = Modifier.width(12.dp)); Text(text = state.tutorCorreo.ifEmpty { NO_REGISTRADO }, fontSize = 15.sp, color = TextDark) }
             }
         }
     }
