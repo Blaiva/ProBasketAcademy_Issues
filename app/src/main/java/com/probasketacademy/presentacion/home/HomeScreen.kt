@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -150,6 +151,9 @@ private fun HomeHeader(onProfileClick: () -> Unit) {
                     color = Color.White
                 )
             }
+            val isPreview = LocalInspectionMode.current
+            val photoUrl = if (!isPreview) FirebaseAuth.getInstance().currentUser?.photoUrl?.toString() else null
+
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -158,12 +162,16 @@ private fun HomeHeader(onProfileClick: () -> Unit) {
                     .clickable { onProfileClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (!photoUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = photoUrl,
+                        contentDescription = "Perfil",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(Icons.Default.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(20.dp))
+                }
             }
         }
     }

@@ -108,8 +108,7 @@ fun AsistenciasContent(
 
     Scaffold(containerColor = LightBackground) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(bottom = 32.dp)
+            modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())
         ) {
             item {
                 HeaderSection(onProfileClick)
