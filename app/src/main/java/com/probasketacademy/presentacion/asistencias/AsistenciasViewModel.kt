@@ -72,7 +72,20 @@ class AsistenciasViewModel @Inject constructor(
     private fun cargarCategorias() {
         viewModelScope.launch {
             obtenerCategoriasConConteoUseCase().collectLatest { lista ->
-                _uiState.update { it.copy(categorias = lista) }
+                _uiState.update { state ->
+                    val categoriaAunExiste = lista.any { it.id == state.categoriaSeleccionadaId }
+                    if (categoriaAunExiste) {
+                        state.copy(categorias = lista)
+                    } else {
+                        state.copy(
+                            categorias = lista,
+                            categoriaSeleccionadaId = null,
+                            categoriaSeleccionadaNombre = "",
+                            jugadores = emptyList(),
+                            asistencias = emptyMap()
+                        )
+                    }
+                }
             }
         }
     }
